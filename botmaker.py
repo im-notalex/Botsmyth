@@ -4770,61 +4770,61 @@ EDITOR_TEMPLATE = """
 
     :root {
 
-      --bg: #f6f1e6;
+      --bg: #ffffff;
 
-      --bg-2: #e8f3f1;
+      --bg-2: #ffffff;
 
-      --ink: #1f1d1a;
+      --ink: #4b4b4b;
 
-      --muted: #6e6259;
+      --muted: #7a7a7a;
 
-      --accent: #0f766e;
+      --accent: #4b5563;
 
-      --accent-2: #f97316;
+      --accent-2: #9ca3af;
 
-      --card: rgba(255, 255, 255, 0.92);
+      --card: rgba(255, 255, 255, 0.96);
 
-      --border: #e7d8c4;
+      --border: #e5e7eb;
 
-      --shadow: rgba(31, 29, 26, 0.08);
+      --shadow: rgba(15, 23, 42, 0.08);
 
       --surface: #ffffff;
 
       --input-bg: #ffffff;
 
-      --soft: #f2e8da;
+      --soft: #f3f4f6;
 
-      --user-bubble: #fff6ed;
+      --user-bubble: #f9fafb;
 
-      --bot-bubble: #f0faf8;
+      --bot-bubble: #f3f4f6;
 
-      --user-border: #f3c79f;
+      --user-border: #e5e7eb;
 
-      --bot-border: #b9dfd8;
+      --bot-border: #d1d5db;
 
-      --ok-bg: #e6f6f4;
+      --ok-bg: #f3f4f6;
 
-      --ok-border: #8fd4c8;
+      --ok-border: #d1d5db;
 
-      --ok-ink: #1f5f58;
+      --ok-ink: #4b4b4b;
 
-      --error-bg: #fde6df;
+      --error-bg: #fef2f2;
 
-      --error-border: #f1b7a8;
+      --error-border: #fecaca;
 
-      --error-ink: #8b2e1f;
+      --error-ink: #7f1d1d;
 
-      --chip-bg: #ffffff;
+      --chip-bg: #f9fafb;
 
-      --glow-1: #ffe7c0;
+      --glow-1: #ffffff;
 
-      --glow-1-fade: rgba(255, 231, 192, 0);
+      --glow-1-fade: rgba(255, 255, 255, 0);
 
-      --glow-2: #d8f0ec;
+      --glow-2: #ffffff;
 
-      --glow-2-fade: rgba(216, 240, 236, 0);
+      --glow-2-fade: rgba(255, 255, 255, 0);
 
-      --focus-ring: rgba(15, 118, 110, 0.25);
+      --focus-ring: rgba(107, 114, 128, 0.3);
 
       --fx-overlay-opacity: 0;
       --fx-overlay-bg: none;
@@ -4838,259 +4838,260 @@ EDITOR_TEMPLATE = """
 
     :root[data-theme="dark"] {
 
-      --bg: #12100d;
+      --bg: #000000;
 
-      --bg-2: #1b1813;
+      --bg-2: #000000;
 
-      --ink: #f6efe5;
+      --ink: #d1d5db;
 
-      --muted: #b6aa9d;
+      --muted: #9ca3af;
 
-      --accent: #14b8a6;
+      --accent: #6b7280;
 
-      --accent-2: #fb923c;
+      --accent-2: #9ca3af;
 
-      --card: rgba(26, 24, 20, 0.95);
+      --card: rgba(8, 8, 8, 0.94);
 
-      --border: #2e2922;
+      --border: #1f1f1f;
 
-      --shadow: rgba(0, 0, 0, 0.35);
+      --shadow: rgba(0, 0, 0, 0.65);
 
-      --surface: #1b1813;
+      --surface: #0a0a0a;
 
-      --input-bg: #221f19;
+      --input-bg: #0f0f0f;
 
-      --soft: #2a251f;
+      --soft: #141414;
 
-      --user-bubble: #2c2118;
+      --user-bubble: #0f0f0f;
 
-      --bot-bubble: #182320;
+      --bot-bubble: #0c0c0c;
 
-      --user-border: #7a4a2a;
+      --user-border: #2a2a2a;
 
-      --bot-border: #2b6f65;
+      --bot-border: #232323;
 
-      --ok-bg: #17332f;
+      --ok-bg: #0f0f0f;
 
-      --ok-border: #2b6f65;
+      --ok-border: #2a2a2a;
 
-      --ok-ink: #cfeee9;
+      --ok-ink: #d1d5db;
 
-      --error-bg: #3b1f17;
+      --error-bg: #1f0f0f;
 
-      --error-border: #7a3527;
+      --error-border: #5f1d1d;
 
-      --error-ink: #f7c3b6;
+      --error-ink: #fca5a5;
 
-      --chip-bg: #201c17;
+      --chip-bg: #0f0f0f;
 
-      --glow-1: #2d1f12;
+      --glow-1: #000000;
 
-      --glow-1-fade: rgba(45, 31, 18, 0);
+      --glow-1-fade: rgba(0, 0, 0, 0);
 
-      --glow-2: #142725;
+      --glow-2: #000000;
 
-      --glow-2-fade: rgba(20, 39, 37, 0);
+      --glow-2-fade: rgba(0, 0, 0, 0);
 
-      --focus-ring: rgba(20, 184, 166, 0.35);
+      --focus-ring: rgba(156, 163, 175, 0.35);
 
     }
 
     :root[data-theme="stellar"] {
-      --bg: #0b1020;
-      --bg-2: #101a33;
-      --ink: #f5f7ff;
-      --muted: #aab4cc;
-      --accent: #7dd3fc;
-      --accent-2: #e2e8f0;
-      --card: rgba(15, 22, 40, 0.9);
-      --border: #263253;
-      --shadow: rgba(4, 8, 18, 0.6);
-      --surface: #121a30;
-      --input-bg: #101827;
-      --soft: #1b2540;
-      --user-bubble: #111a33;
-      --bot-bubble: #0f1f2e;
+      --bg: #0a0f24;
+      --bg-2: #111c3d;
+      --ink: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #f8fafc;
+      --accent-2: #c0c7d2;
+      --card: rgba(15, 24, 44, 0.92);
+      --border: #2b365a;
+      --shadow: rgba(3, 6, 16, 0.7);
+      --surface: #0f172a;
+      --input-bg: #0f172a;
+      --soft: #18223b;
+      --user-bubble: #111b33;
+      --bot-bubble: #0d1a2f;
       --user-border: #2e3e66;
-      --bot-border: #1f5b74;
-      --ok-bg: #0d2533;
-      --ok-border: #3aaed8;
-      --ok-ink: #cdefff;
-      --error-bg: #33151b;
-      --error-border: #7d2b39;
-      --error-ink: #f6c3cf;
-      --chip-bg: #121a30;
-      --glow-1: #223b73;
-      --glow-1-fade: rgba(34, 59, 115, 0);
-      --glow-2: #12345a;
-      --glow-2-fade: rgba(18, 52, 90, 0);
-      --focus-ring: rgba(125, 211, 252, 0.35);
+      --bot-border: #1f4d66;
+      --ok-bg: #0f2433;
+      --ok-border: #7dd3fc;
+      --ok-ink: #dbeafe;
+      --error-bg: #30131c;
+      --error-border: #7c2a3d;
+      --error-ink: #f5c2d1;
+      --chip-bg: #111b33;
+      --glow-1: #1f2c55;
+      --glow-1-fade: rgba(31, 44, 85, 0);
+      --glow-2: #0c2a3a;
+      --glow-2-fade: rgba(12, 42, 58, 0);
+      --focus-ring: rgba(248, 250, 252, 0.35);
       --fx-overlay-opacity: 0.35;
-      --fx-overlay-bg: radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.6), transparent 60%),
-        radial-gradient(1px 1px at 80% 70%, rgba(255, 255, 255, 0.4), transparent 60%),
-        radial-gradient(1.5px 1.5px at 60% 20%, rgba(255, 255, 255, 0.5), transparent 60%),
-        radial-gradient(1px 1px at 30% 80%, rgba(255, 255, 255, 0.35), transparent 60%);
+      --fx-overlay-bg: radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.65), transparent 60%),
+        radial-gradient(1px 1px at 80% 70%, rgba(255, 255, 255, 0.45), transparent 60%),
+        radial-gradient(1.5px 1.5px at 60% 20%, rgba(255, 255, 255, 0.55), transparent 60%),
+        radial-gradient(1px 1px at 30% 80%, rgba(255, 255, 255, 0.4), transparent 60%);
       --fx-overlay-size: 240px 240px;
       --fx-overlay-anim: twinkle 10s ease-in-out infinite;
     }
 
     :root[data-theme="nebula"] {
-      --bg: #120a22;
-      --bg-2: #1c0f33;
-      --ink: #f5f1ff;
-      --muted: #b6a8d3;
-      --accent: #a855f7;
-      --accent-2: #22d3ee;
-      --card: rgba(26, 16, 44, 0.92);
-      --border: #3b2657;
-      --shadow: rgba(10, 4, 24, 0.55);
-      --surface: #1c1430;
-      --input-bg: #21183a;
+      --bg: #180a2b;
+      --bg-2: #2b1246;
+      --ink: #f5e9ff;
+      --muted: #c9afea;
+      --accent: #d946ef;
+      --accent-2: #14b8a6;
+      --card: rgba(28, 16, 50, 0.92);
+      --border: #43235f;
+      --shadow: rgba(10, 4, 24, 0.6);
+      --surface: #1d1233;
+      --input-bg: #21163a;
       --soft: #2a1d46;
-      --user-bubble: #23183e;
-      --bot-bubble: #152837;
-      --user-border: #4b2b70;
-      --bot-border: #1f6f7a;
-      --ok-bg: #112b2f;
-      --ok-border: #32c4d4;
-      --ok-ink: #d0f4f9;
-      --error-bg: #3a1424;
-      --error-border: #8a3250;
-      --error-ink: #f7cadc;
-      --chip-bg: #22183a;
-      --glow-1: #3d1f6f;
-      --glow-1-fade: rgba(61, 31, 111, 0);
-      --glow-2: #123f62;
-      --glow-2-fade: rgba(18, 63, 98, 0);
-      --focus-ring: rgba(168, 85, 247, 0.45);
+      --user-bubble: #24163d;
+      --bot-bubble: #142a36;
+      --user-border: #543074;
+      --bot-border: #1f6a70;
+      --ok-bg: #102a2e;
+      --ok-border: #14b8a6;
+      --ok-ink: #d7f7f0;
+      --error-bg: #3a1426;
+      --error-border: #8b2d50;
+      --error-ink: #f7c4d9;
+      --chip-bg: #24163d;
+      --glow-1: #4a1a7a;
+      --glow-1-fade: rgba(74, 26, 122, 0);
+      --glow-2: #0f4258;
+      --glow-2-fade: rgba(15, 66, 88, 0);
+      --focus-ring: rgba(217, 70, 239, 0.45);
       --fx-overlay-opacity: 0.5;
-      --fx-overlay-bg: radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.35), transparent 55%),
-        radial-gradient(circle at 80% 10%, rgba(34, 211, 238, 0.28), transparent 55%),
+      --fx-overlay-bg: radial-gradient(circle at 20% 20%, rgba(217, 70, 239, 0.35), transparent 55%),
+        radial-gradient(circle at 80% 10%, rgba(20, 184, 166, 0.28), transparent 55%),
         radial-gradient(circle at 30% 80%, rgba(236, 72, 153, 0.3), transparent 60%);
       --fx-overlay-size: 200% 200%;
       --fx-overlay-anim: nebulaShift 18s ease infinite;
     }
 
     :root[data-theme="solar"] {
-      --bg: #fff1cf;
-      --bg-2: #ffe2a8;
-      --ink: #3f2608;
-      --muted: #8a5b2c;
+      --bg: #fff5d6;
+      --bg-2: #ffe7b3;
+      --ink: #4b3a2a;
+      --muted: #8a6a4a;
       --accent: #f59e0b;
-      --accent-2: #f97316;
-      --card: rgba(255, 255, 255, 0.93);
-      --border: #f6c687;
-      --shadow: rgba(120, 68, 15, 0.15);
-      --surface: #fff7e8;
-      --input-bg: #fff4de;
-      --soft: #ffe5be;
-      --user-bubble: #fff5e4;
-      --bot-bubble: #fff1d4;
-      --user-border: #f2b975;
+      --accent-2: #fb923c;
+      --card: rgba(255, 255, 255, 0.95);
+      --border: #f3c889;
+      --shadow: rgba(150, 90, 20, 0.18);
+      --surface: #fff8e9;
+      --input-bg: #fff4df;
+      --soft: #ffe3b8;
+      --user-bubble: #fff7e6;
+      --bot-bubble: #fff0cf;
+      --user-border: #f0c27b;
       --bot-border: #f7c48c;
-      --ok-bg: #f4fbe8;
-      --ok-border: #a7d67c;
-      --ok-ink: #36591c;
-      --error-bg: #ffe6dc;
-      --error-border: #f5b29c;
+      --ok-bg: #f5fbe9;
+      --ok-border: #c7e28a;
+      --ok-ink: #3f5f1c;
+      --error-bg: #ffe8df;
+      --error-border: #f4b39e;
       --error-ink: #7a2d1f;
-      --chip-bg: #fff3da;
-      --glow-1: #ffdf9b;
-      --glow-1-fade: rgba(255, 223, 155, 0);
-      --glow-2: #ffd0a1;
-      --glow-2-fade: rgba(255, 208, 161, 0);
+      --chip-bg: #fff3db;
+      --glow-1: #ffe7a6;
+      --glow-1-fade: rgba(255, 231, 166, 0);
+      --glow-2: #ffd3a4;
+      --glow-2-fade: rgba(255, 211, 164, 0);
       --focus-ring: rgba(245, 158, 11, 0.35);
-      --fx-overlay-opacity: 0.3;
-      --fx-overlay-bg: radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.25), transparent 60%),
-        radial-gradient(circle at 80% 30%, rgba(249, 115, 22, 0.2), transparent 60%);
+      --fx-overlay-opacity: 0.32;
+      --fx-overlay-bg: radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.28), transparent 60%),
+        radial-gradient(circle at 80% 30%, rgba(251, 146, 60, 0.22), transparent 60%);
       --fx-overlay-size: 160% 160%;
       --fx-overlay-anim: solarPulse 7s ease-in-out infinite;
     }
 
     :root[data-theme="lunar"] {
-      --bg: #eef2f7;
-      --bg-2: #dfe7f2;
-      --ink: #1b2430;
-      --muted: #607287;
-      --accent: #6ea8fe;
-      --accent-2: #9aa7ff;
+      --bg: #f6f8fb;
+      --bg-2: #e3e9f2;
+      --ink: #3b4452;
+      --muted: #7b8797;
+      --accent: #93c5fd;
+      --accent-2: #e2e8f0;
       --card: rgba(255, 255, 255, 0.92);
-      --border: #ccd6e3;
+      --border: #cfd6e2;
       --shadow: rgba(25, 38, 60, 0.08);
-      --surface: #f6f9fd;
+      --surface: #f7f9fd;
       --input-bg: #f1f5fb;
       --soft: #e8eef7;
       --user-bubble: #f7f9fe;
       --bot-bubble: #eef4fb;
       --user-border: #c3d3ea;
       --bot-border: #b9c7df;
-      --ok-bg: #eaf6ff;
+      --ok-bg: #edf5ff;
       --ok-border: #93c5fd;
-      --ok-ink: #1e3a5f;
+      --ok-ink: #2a3e5f;
       --error-bg: #ffe8ea;
       --error-border: #f2b3bc;
       --error-ink: #7a1f2b;
       --chip-bg: #f4f7fb;
-      --glow-1: #d7e6ff;
-      --glow-1-fade: rgba(215, 230, 255, 0);
-      --glow-2: #cddaf7;
-      --glow-2-fade: rgba(205, 218, 247, 0);
-      --focus-ring: rgba(110, 168, 254, 0.35);
-      --fx-overlay-opacity: 0.22;
-      --fx-overlay-bg: radial-gradient(circle at 30% 30%, rgba(140, 170, 210, 0.2), transparent 60%);
+      --glow-1: #dbe6f7;
+      --glow-1-fade: rgba(219, 230, 247, 0);
+      --glow-2: #e8edf5;
+      --glow-2-fade: rgba(232, 237, 245, 0);
+      --focus-ring: rgba(147, 197, 253, 0.35);
+      --fx-overlay-opacity: 0.2;
+      --fx-overlay-bg: radial-gradient(circle at 30% 30%, rgba(148, 163, 184, 0.2), transparent 60%);
+      --fx-overlay-blur: 6px;
       --fx-overlay-size: 160% 160%;
       --fx-overlay-anim: lunarDrift 18s ease-in-out infinite;
     }
 
     :root[data-theme="eclipse"] {
-      --bg: #07060b;
-      --bg-2: #130b20;
-      --ink: #f7f1ff;
-      --muted: #b7a6d1;
-      --accent: #ef4444;
-      --accent-2: #7c3aed;
-      --card: rgba(15, 10, 22, 0.92);
+      --bg: #050406;
+      --bg-2: #110812;
+      --ink: #f3e8ff;
+      --muted: #b0a3c0;
+      --accent: #dc2626;
+      --accent-2: #4c1d95;
+      --card: rgba(12, 8, 18, 0.92);
       --border: #2b1c3f;
-      --shadow: rgba(0, 0, 0, 0.65);
-      --surface: #0f0a1a;
-      --input-bg: #141025;
-      --soft: #1b132e;
-      --user-bubble: #1a0f22;
-      --bot-bubble: #0f1422;
-      --user-border: #4a2740;
-      --bot-border: #2a3c5a;
+      --shadow: rgba(0, 0, 0, 0.7);
+      --surface: #0c0816;
+      --input-bg: #120c20;
+      --soft: #171022;
+      --user-bubble: #140b1a;
+      --bot-bubble: #0d111b;
+      --user-border: #40213a;
+      --bot-border: #25314a;
       --ok-bg: #0f2a26;
       --ok-border: #22c55e;
       --ok-ink: #c7f9e8;
       --error-bg: #3d121a;
       --error-border: #8b1e2e;
       --error-ink: #f5b9c3;
-      --chip-bg: #161022;
+      --chip-bg: #14101f;
       --glow-1: #2b103f;
       --glow-1-fade: rgba(43, 16, 63, 0);
       --glow-2: #1a0b2d;
       --glow-2-fade: rgba(26, 11, 45, 0);
-      --focus-ring: rgba(239, 68, 68, 0.4);
-      --fx-overlay-opacity: 0.2;
-      --fx-overlay-bg: radial-gradient(circle at 40% 20%, rgba(124, 58, 237, 0.2), transparent 60%),
-        radial-gradient(circle at 70% 70%, rgba(239, 68, 68, 0.15), transparent 60%);
+      --focus-ring: rgba(220, 38, 38, 0.4);
+      --fx-overlay-opacity: 0.18;
+      --fx-overlay-bg: radial-gradient(circle at 40% 20%, rgba(76, 29, 149, 0.25), transparent 60%),
+        radial-gradient(circle at 70% 70%, rgba(220, 38, 38, 0.2), transparent 60%);
       --fx-overlay-size: 200% 200%;
       --fx-overlay-anim: eclipseFade 16s ease-in-out infinite;
-      --fx-vignette-opacity: 0.55;
-      --fx-vignette-color: rgba(0, 0, 0, 0.75);
+      --fx-vignette-opacity: 0.6;
+      --fx-vignette-color: rgba(0, 0, 0, 0.8);
     }
 
     :root[data-theme="aurora"] {
-      --bg: #091a19;
-      --bg-2: #0b2328;
-      --ink: #e6fdf9;
-      --muted: #9cd8cf;
-      --accent: #34d399;
-      --accent-2: #7c3aed;
-      --card: rgba(12, 27, 32, 0.9);
-      --border: #1d3a3a;
-      --shadow: rgba(5, 16, 16, 0.5);
-      --surface: #0f2326;
+      --bg: #071b1b;
+      --bg-2: #0a2726;
+      --ink: #e6fff7;
+      --muted: #a2dcd0;
+      --accent: #22c55e;
+      --accent-2: #8b5cf6;
+      --card: rgba(10, 25, 30, 0.92);
+      --border: #1c3c3d;
+      --shadow: rgba(5, 16, 16, 0.55);
+      --surface: #0d2225;
       --input-bg: #0f2326;
       --soft: #123136;
       --user-bubble: #0e1f26;
@@ -5098,7 +5099,7 @@ EDITOR_TEMPLATE = """
       --user-border: #1d4a4a;
       --bot-border: #1d5a5a;
       --ok-bg: #0b2f26;
-      --ok-border: #34d399;
+      --ok-border: #22c55e;
       --ok-ink: #c6f7e8;
       --error-bg: #3a1419;
       --error-border: #8b2a35;
@@ -5106,28 +5107,28 @@ EDITOR_TEMPLATE = """
       --chip-bg: #11262a;
       --glow-1: #0f3a2a;
       --glow-1-fade: rgba(15, 58, 42, 0);
-      --glow-2: #3a1b5a;
-      --glow-2-fade: rgba(58, 27, 90, 0);
-      --focus-ring: rgba(52, 211, 153, 0.4);
-      --fx-overlay-opacity: 0.4;
-      --fx-overlay-bg: linear-gradient(120deg, rgba(52, 211, 153, 0.25), rgba(34, 211, 238, 0.2), rgba(124, 58, 237, 0.25));
+      --glow-2: #0ea5e9;
+      --glow-2-fade: rgba(14, 165, 233, 0);
+      --focus-ring: rgba(34, 197, 94, 0.4);
+      --fx-overlay-opacity: 0.42;
+      --fx-overlay-bg: linear-gradient(120deg, rgba(34, 197, 94, 0.25), rgba(6, 182, 212, 0.22), rgba(139, 92, 246, 0.28));
       --fx-overlay-size: 220% 220%;
       --fx-overlay-anim: auroraFlow 20s ease infinite;
     }
 
     :root[data-theme="cosmos"] {
-      --bg: #070b18;
-      --bg-2: #0b152c;
-      --ink: #f2f6ff;
-      --muted: #a6b0cc;
-      --accent: #60a5fa;
+      --bg: #090b1f;
+      --bg-2: #111833;
+      --ink: #f8fafc;
+      --muted: #b4bfd6;
+      --accent: #6366f1;
       --accent-2: #f8fafc;
-      --card: rgba(13, 18, 35, 0.9);
-      --border: #25325a;
-      --shadow: rgba(2, 5, 15, 0.6);
+      --card: rgba(12, 16, 32, 0.92);
+      --border: #273255;
+      --shadow: rgba(2, 5, 15, 0.65);
       --surface: #0f172a;
       --input-bg: #111a30;
-      --soft: #19243f;
+      --soft: #18223b;
       --user-bubble: #111a32;
       --bot-bubble: #0f1c2e;
       --user-border: #2b3c66;
@@ -5143,25 +5144,25 @@ EDITOR_TEMPLATE = """
       --glow-1-fade: rgba(27, 47, 95, 0);
       --glow-2: #0c2a45;
       --glow-2-fade: rgba(12, 42, 69, 0);
-      --focus-ring: rgba(96, 165, 250, 0.4);
-      --fx-overlay-opacity: 0.25;
-      --fx-overlay-bg: radial-gradient(1px 1px at 25% 35%, rgba(255, 255, 255, 0.5), transparent 60%),
-        radial-gradient(1px 1px at 75% 55%, rgba(255, 255, 255, 0.35), transparent 60%),
-        radial-gradient(1.5px 1.5px at 55% 15%, rgba(255, 255, 255, 0.45), transparent 60%);
+      --focus-ring: rgba(99, 102, 241, 0.45);
+      --fx-overlay-opacity: 0.28;
+      --fx-overlay-bg: radial-gradient(1px 1px at 25% 35%, rgba(255, 255, 255, 0.6), transparent 60%),
+        radial-gradient(1px 1px at 75% 55%, rgba(255, 255, 255, 0.4), transparent 60%),
+        radial-gradient(1.5px 1.5px at 55% 15%, rgba(255, 255, 255, 0.5), transparent 60%);
       --fx-overlay-size: 260px 260px;
       --fx-overlay-anim: cosmosDrift 26s linear infinite;
     }
 
     :root[data-theme="supernova"] {
-      --bg: #0a0f1f;
-      --bg-2: #121a33;
-      --ink: #f5f7ff;
-      --muted: #a8b3d8;
+      --bg: #0b0f1f;
+      --bg-2: #141a33;
+      --ink: #ffffff;
+      --muted: #d0d7f0;
       --accent: #3b82f6;
       --accent-2: #ec4899;
-      --card: rgba(15, 20, 40, 0.9);
+      --card: rgba(15, 20, 40, 0.92);
       --border: #2a355d;
-      --shadow: rgba(6, 8, 20, 0.6);
+      --shadow: rgba(6, 8, 20, 0.65);
       --surface: #10182d;
       --input-bg: #121b35;
       --soft: #1a2542;
@@ -5180,24 +5181,24 @@ EDITOR_TEMPLATE = """
       --glow-1-fade: rgba(31, 59, 111, 0);
       --glow-2: #51204f;
       --glow-2-fade: rgba(81, 32, 79, 0);
-      --focus-ring: rgba(59, 130, 246, 0.45);
-      --fx-overlay-opacity: 0.35;
-      --fx-overlay-bg: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.25), transparent 55%),
-        radial-gradient(circle at 70% 30%, rgba(236, 72, 153, 0.2), transparent 55%);
+      --focus-ring: rgba(59, 130, 246, 0.5);
+      --fx-overlay-opacity: 0.36;
+      --fx-overlay-bg: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.28), transparent 55%),
+        radial-gradient(circle at 70% 30%, rgba(236, 72, 153, 0.24), transparent 55%);
       --fx-overlay-size: 180% 180%;
       --fx-overlay-anim: supernovaPulse 8s ease-in-out infinite;
     }
 
     :root[data-theme="void"] {
-      --bg: #050608;
-      --bg-2: #0c0d12;
-      --ink: #e5e7eb;
-      --muted: #9aa0ac;
+      --bg: #060608;
+      --bg-2: #0b0b12;
+      --ink: #d1d5db;
+      --muted: #9ca3af;
       --accent: #7c3aed;
-      --accent-2: #64748b;
-      --card: rgba(10, 12, 16, 0.92);
-      --border: #20222b;
-      --shadow: rgba(0, 0, 0, 0.6);
+      --accent-2: #6b7280;
+      --card: rgba(10, 12, 16, 0.94);
+      --border: #1f222b;
+      --shadow: rgba(0, 0, 0, 0.65);
       --surface: #0c0f14;
       --input-bg: #0e1118;
       --soft: #151922;
@@ -5226,51 +5227,51 @@ EDITOR_TEMPLATE = """
     }
 
     :root[data-theme="orbit"] {
-      --bg: #e9eff6;
-      --bg-2: #d6e2f1;
-      --ink: #1f2a37;
-      --muted: #64748b;
-      --accent: #60a5fa;
+      --bg: #1f2937;
+      --bg-2: #243244;
+      --ink: #e5e7eb;
+      --muted: #a3aab7;
+      --accent: #38bdf8;
       --accent-2: #f97316;
-      --card: rgba(255, 255, 255, 0.92);
-      --border: #cbd5e1;
-      --shadow: rgba(30, 41, 59, 0.1);
-      --surface: #f7fafc;
-      --input-bg: #f1f5f9;
-      --soft: #e2e8f0;
-      --user-bubble: #f5f9ff;
-      --bot-bubble: #edf4ff;
-      --user-border: #c2d4ef;
-      --bot-border: #a7c1e8;
-      --ok-bg: #eaf6ff;
-      --ok-border: #60a5fa;
-      --ok-ink: #1e3a8a;
-      --error-bg: #ffe8e3;
-      --error-border: #f5b7a0;
-      --error-ink: #7a2d1f;
-      --chip-bg: #f3f6fb;
-      --glow-1: #c7ddff;
-      --glow-1-fade: rgba(199, 221, 255, 0);
-      --glow-2: #ffd9b0;
-      --glow-2-fade: rgba(255, 217, 176, 0);
-      --focus-ring: rgba(96, 165, 250, 0.35);
-      --fx-overlay-opacity: 0.35;
-      --fx-overlay-bg: radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.25), transparent 60%),
+      --card: rgba(28, 36, 52, 0.92);
+      --border: #334155;
+      --shadow: rgba(15, 23, 42, 0.35);
+      --surface: #1f2937;
+      --input-bg: #24303f;
+      --soft: #2a3646;
+      --user-bubble: #223040;
+      --bot-bubble: #1b2a37;
+      --user-border: #3b4b63;
+      --bot-border: #2f4b60;
+      --ok-bg: #0f2a36;
+      --ok-border: #38bdf8;
+      --ok-ink: #dbeafe;
+      --error-bg: #3a1a16;
+      --error-border: #7a2d1f;
+      --error-ink: #f7c4b3;
+      --chip-bg: #223040;
+      --glow-1: #2b3c55;
+      --glow-1-fade: rgba(43, 60, 85, 0);
+      --glow-2: #3a2a16;
+      --glow-2-fade: rgba(58, 42, 22, 0);
+      --focus-ring: rgba(56, 189, 248, 0.35);
+      --fx-overlay-opacity: 0.32;
+      --fx-overlay-bg: radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.25), transparent 60%),
         radial-gradient(circle at 70% 70%, rgba(249, 115, 22, 0.2), transparent 60%);
       --fx-overlay-size: 180% 180%;
       --fx-overlay-anim: orbitDrift 22s ease-in-out infinite;
     }
 
     :root[data-theme="plasma"] {
-      --bg: #06060d;
-      --bg-2: #100b1a;
-      --ink: #f4f2ff;
-      --muted: #b7a7d6;
+      --bg: #04050b;
+      --bg-2: #0b0d1a;
+      --ink: #f4f7ff;
+      --muted: #b6b0d3;
       --accent: #22d3ee;
       --accent-2: #a855f7;
-      --card: rgba(14, 10, 22, 0.92);
+      --card: rgba(12, 10, 20, 0.94);
       --border: #2a1c40;
-      --shadow: rgba(0, 0, 0, 0.6);
+      --shadow: rgba(0, 0, 0, 0.65);
       --surface: #120d1f;
       --input-bg: #140f24;
       --soft: #1c1330;
@@ -5289,23 +5290,23 @@ EDITOR_TEMPLATE = """
       --glow-1-fade: rgba(43, 31, 95, 0);
       --glow-2: #0e3a4a;
       --glow-2-fade: rgba(14, 58, 74, 0);
-      --focus-ring: rgba(34, 211, 238, 0.45);
-      --fx-overlay-opacity: 0.4;
-      --fx-overlay-bg: linear-gradient(140deg, rgba(34, 211, 238, 0.25), rgba(168, 85, 247, 0.28), rgba(15, 23, 42, 0.1));
+      --focus-ring: rgba(34, 211, 238, 0.5);
+      --fx-overlay-opacity: 0.42;
+      --fx-overlay-bg: linear-gradient(140deg, rgba(34, 211, 238, 0.28), rgba(168, 85, 247, 0.3), rgba(0, 0, 0, 0.1));
       --fx-overlay-size: 220% 220%;
       --fx-overlay-anim: plasmaSurge 12s ease-in-out infinite;
     }
 
     :root[data-theme="meteor"] {
-      --bg: #1a1411;
-      --bg-2: #231613;
-      --ink: #f7f1eb;
-      --muted: #c1a79a;
+      --bg: #1a1613;
+      --bg-2: #241712;
+      --ink: #f4ede8;
+      --muted: #c5a79a;
       --accent: #f97316;
       --accent-2: #ef4444;
-      --card: rgba(28, 20, 16, 0.92);
+      --card: rgba(26, 18, 14, 0.94);
       --border: #3b2a20;
-      --shadow: rgba(0, 0, 0, 0.5);
+      --shadow: rgba(0, 0, 0, 0.55);
       --surface: #221913;
       --input-bg: #281c15;
       --soft: #2f2018;
@@ -5324,9 +5325,9 @@ EDITOR_TEMPLATE = """
       --glow-1-fade: rgba(58, 32, 20, 0);
       --glow-2: #3a1a16;
       --glow-2-fade: rgba(58, 26, 22, 0);
-      --focus-ring: rgba(249, 115, 22, 0.4);
+      --focus-ring: rgba(249, 115, 22, 0.45);
       --fx-overlay-opacity: 0.35;
-      --fx-overlay-bg: linear-gradient(120deg, rgba(249, 115, 22, 0.15), rgba(15, 23, 42, 0) 35%, rgba(239, 68, 68, 0.12) 70%, rgba(15, 23, 42, 0));
+      --fx-overlay-bg: linear-gradient(120deg, rgba(249, 115, 22, 0.18), rgba(15, 23, 42, 0) 35%, rgba(239, 68, 68, 0.16) 70%, rgba(15, 23, 42, 0));
       --fx-overlay-size: 220% 220%;
       --fx-overlay-anim: meteorShift 6s linear infinite;
     }
@@ -5335,61 +5336,61 @@ EDITOR_TEMPLATE = """
 
       :root:not([data-theme]) {
 
-        --bg: #12100d;
+        --bg: #000000;
 
-        --bg-2: #1b1813;
+        --bg-2: #000000;
 
-        --ink: #f6efe5;
+        --ink: #d1d5db;
 
-        --muted: #b6aa9d;
+        --muted: #9ca3af;
 
-        --accent: #14b8a6;
+        --accent: #6b7280;
 
-        --accent-2: #fb923c;
+        --accent-2: #9ca3af;
 
-        --card: rgba(26, 24, 20, 0.95);
+        --card: rgba(8, 8, 8, 0.94);
 
-        --border: #2e2922;
+        --border: #1f1f1f;
 
-        --shadow: rgba(0, 0, 0, 0.35);
+        --shadow: rgba(0, 0, 0, 0.65);
 
-        --surface: #1b1813;
+        --surface: #0a0a0a;
 
-        --input-bg: #221f19;
+        --input-bg: #0f0f0f;
 
-        --soft: #2a251f;
+        --soft: #141414;
 
-        --user-bubble: #2c2118;
+        --user-bubble: #0f0f0f;
 
-        --bot-bubble: #182320;
+        --bot-bubble: #0c0c0c;
 
-        --user-border: #7a4a2a;
+        --user-border: #2a2a2a;
 
-        --bot-border: #2b6f65;
+        --bot-border: #232323;
 
-        --ok-bg: #17332f;
+        --ok-bg: #0f0f0f;
 
-        --ok-border: #2b6f65;
+        --ok-border: #2a2a2a;
 
-        --ok-ink: #cfeee9;
+        --ok-ink: #d1d5db;
 
-        --error-bg: #3b1f17;
+        --error-bg: #1f0f0f;
 
-        --error-border: #7a3527;
+        --error-border: #5f1d1d;
 
-        --error-ink: #f7c3b6;
+        --error-ink: #fca5a5;
 
-        --chip-bg: #201c17;
+        --chip-bg: #0f0f0f;
 
-        --glow-1: #2d1f12;
+        --glow-1: #000000;
 
-        --glow-1-fade: rgba(45, 31, 18, 0);
+        --glow-1-fade: rgba(0, 0, 0, 0);
 
-        --glow-2: #142725;
+        --glow-2: #000000;
 
-        --glow-2-fade: rgba(20, 39, 37, 0);
+        --glow-2-fade: rgba(0, 0, 0, 0);
 
-        --focus-ring: rgba(20, 184, 166, 0.35);
+        --focus-ring: rgba(156, 163, 175, 0.35);
 
       }
 
@@ -5758,10 +5759,120 @@ EDITOR_TEMPLATE = """
 
       display: flex;
 
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
 
       gap: 8px;
 
+    }
+
+    .theme-select {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .theme-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-width: 340px;
+    }
+
+    .theme-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+    }
+
+    .theme-option:hover {
+      color: var(--ink);
+    }
+
+    .theme-option.active {
+      color: var(--ink);
+      border-color: var(--accent);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+    }
+
+    .theme-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--soft);
+    }
+
+    .theme-swatch[data-theme="system"] {
+      background: linear-gradient(135deg, #ffffff, #000000);
+    }
+
+    .theme-swatch[data-theme="light"] {
+      background: #ffffff;
+      border-color: #e5e7eb;
+    }
+
+    .theme-swatch[data-theme="dark"] {
+      background: #000000;
+      border-color: #1f1f1f;
+    }
+
+    .theme-swatch[data-theme="stellar"] {
+      background: linear-gradient(135deg, #0a0f24, #2b365a, #c0c7d2);
+    }
+
+    .theme-swatch[data-theme="nebula"] {
+      background: linear-gradient(135deg, #2b1246, #d946ef, #14b8a6);
+    }
+
+    .theme-swatch[data-theme="solar"] {
+      background: linear-gradient(135deg, #ffe7b3, #f59e0b, #fb923c);
+    }
+
+    .theme-swatch[data-theme="lunar"] {
+      background: linear-gradient(135deg, #e3e9f2, #93c5fd, #ffffff);
+    }
+
+    .theme-swatch[data-theme="eclipse"] {
+      background: linear-gradient(135deg, #050406, #dc2626, #4c1d95);
+    }
+
+    .theme-swatch[data-theme="aurora"] {
+      background: linear-gradient(135deg, #0a2726, #22c55e, #8b5cf6);
+    }
+
+    .theme-swatch[data-theme="cosmos"] {
+      background: linear-gradient(135deg, #111833, #6366f1, #f8fafc);
+    }
+
+    .theme-swatch[data-theme="supernova"] {
+      background: linear-gradient(135deg, #141a33, #3b82f6, #ec4899);
+    }
+
+    .theme-swatch[data-theme="void"] {
+      background: linear-gradient(135deg, #060608, #7c3aed, #6b7280);
+    }
+
+    .theme-swatch[data-theme="orbit"] {
+      background: linear-gradient(135deg, #243244, #38bdf8, #f97316);
+    }
+
+    .theme-swatch[data-theme="plasma"] {
+      background: linear-gradient(135deg, #0b0d1a, #22d3ee, #a855f7);
+    }
+
+    .theme-swatch[data-theme="meteor"] {
+      background: linear-gradient(135deg, #241712, #f97316, #ef4444);
     }
 
     .mode-toggle {
@@ -5806,7 +5917,7 @@ EDITOR_TEMPLATE = """
 
       color: #fff;
 
-      box-shadow: 0 6px 12px rgba(15, 118, 110, 0.2);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
 
     }
 
@@ -6029,7 +6140,7 @@ EDITOR_TEMPLATE = """
 
       border-color: var(--accent);
 
-      box-shadow: 0 6px 14px rgba(15, 118, 110, 0.15);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
 
     }
 
@@ -6103,7 +6214,7 @@ EDITOR_TEMPLATE = """
 
       color: var(--ink);
 
-      background: linear-gradient(135deg, rgba(15, 118, 110, 0.2), rgba(249, 115, 22, 0.2));
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.18));
 
       backdrop-filter: blur(6px);
 
@@ -6197,23 +6308,23 @@ EDITOR_TEMPLATE = """
       --shadow: rgba(31, 29, 26, 0.12);
     }
     :root[data-theme="dark"] .onboarding-modal {
-      --ink: #f1e7da;
-      --muted: #c7b7a8;
-      --card: rgba(18, 16, 14, 0.98);
-      --surface: rgba(22, 19, 16, 0.98);
-      --soft: #252019;
-      --border: #332b23;
-      --shadow: rgba(0, 0, 0, 0.6);
+      --ink: #d1d5db;
+      --muted: #9ca3af;
+      --card: rgba(10, 10, 10, 0.98);
+      --surface: rgba(12, 12, 12, 0.98);
+      --soft: #161616;
+      --border: #1f1f1f;
+      --shadow: rgba(0, 0, 0, 0.7);
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme]) .onboarding-modal {
-        --ink: #f1e7da;
-        --muted: #c7b7a8;
-        --card: rgba(18, 16, 14, 0.98);
-        --surface: rgba(22, 19, 16, 0.98);
-        --soft: #252019;
-        --border: #332b23;
-        --shadow: rgba(0, 0, 0, 0.6);
+        --ink: #d1d5db;
+        --muted: #9ca3af;
+        --card: rgba(10, 10, 10, 0.98);
+        --surface: rgba(12, 12, 12, 0.98);
+        --soft: #161616;
+        --border: #1f1f1f;
+        --shadow: rgba(0, 0, 0, 0.7);
       }
     }
     .onboarding-modal .section-head h2,
@@ -6300,7 +6411,7 @@ EDITOR_TEMPLATE = """
 
       border: 2px solid rgba(255, 255, 255, 0.9);
 
-      box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.18), 0 0 24px rgba(15, 118, 110, 0.45);
+      box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.18), 0 0 24px rgba(0, 0, 0, 0.24);
 
       transition: width 0.4s ease, height 0.4s ease, top 0.4s ease, left 0.4s ease;
 
@@ -6313,7 +6424,7 @@ EDITOR_TEMPLATE = """
       padding: 26px;
       min-height: 320px;
       background: radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.4), transparent 60%),
-        linear-gradient(135deg, rgba(15, 118, 110, 0.24), rgba(249, 115, 22, 0.2), rgba(15, 118, 110, 0.08));
+        linear-gradient(135deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.04));
       background-size: 140% 140%, 200% 200%;
 
       background-position: 0% 50%, 0% 50%;
@@ -6350,7 +6461,7 @@ EDITOR_TEMPLATE = """
 
       left: -40px;
 
-      background: radial-gradient(circle at 30% 30%, rgba(15, 118, 110, 0.45), transparent 70%);
+      background: radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.12), transparent 70%);
 
     }
 
@@ -6360,7 +6471,7 @@ EDITOR_TEMPLATE = """
 
       right: -30px;
 
-      background: radial-gradient(circle at 60% 40%, rgba(249, 115, 22, 0.45), transparent 70%);
+      background: radial-gradient(circle at 60% 40%, rgba(0, 0, 0, 0.1), transparent 70%);
 
       animation-delay: -3s;
 
@@ -6380,7 +6491,7 @@ EDITOR_TEMPLATE = """
 
       border: 1px solid rgba(255, 255, 255, 0.7);
 
-      box-shadow: 0 10px 22px rgba(15, 118, 110, 0.18);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
 
       font-size: 12px;
 
@@ -6423,7 +6534,7 @@ EDITOR_TEMPLATE = """
       background: rgba(255, 255, 255, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.85);
 
-      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.12);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
 
       font-size: 12px;
 
@@ -6517,24 +6628,24 @@ EDITOR_TEMPLATE = """
     }
 
     .onboard-track-toggle button.active {
-      box-shadow: 0 10px 18px rgba(15, 118, 110, 0.22);
+      box-shadow: 0 10px 18px rgba(107, 114, 128, 0.28);
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-hero {
-      background: radial-gradient(circle at 20% 15%, rgba(35, 31, 26, 0.8), transparent 55%),
-        linear-gradient(135deg, rgba(16, 44, 40, 0.75), rgba(66, 40, 22, 0.7), rgba(18, 16, 14, 0.85));
+      background: radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.06), transparent 55%),
+        linear-gradient(135deg, rgba(18, 18, 18, 0.92), rgba(8, 8, 8, 0.98));
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-badge {
-      background: rgba(26, 22, 18, 0.9);
-      border-color: #3b332a;
-      color: #7ddfd4;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+      background: rgba(12, 12, 12, 0.9);
+      border-color: #262626;
+      color: #d1d5db;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.45);
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-hero::before {
-      background: radial-gradient(circle at 30% 30%, rgba(20, 184, 166, 0.3), transparent 70%);
+      background: radial-gradient(circle at 30% 30%, rgba(156, 163, 175, 0.2), transparent 70%);
       opacity: 0.6;
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-hero::after {
-      background: radial-gradient(circle at 60% 40%, rgba(251, 146, 60, 0.26), transparent 70%);
+      background: radial-gradient(circle at 60% 40%, rgba(107, 114, 128, 0.22), transparent 70%);
       opacity: 0.6;
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-hero h2 {
@@ -6542,59 +6653,59 @@ EDITOR_TEMPLATE = """
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-focus {
       background: radial-gradient(circle at var(--focus-x) var(--focus-y),
-        rgba(20, 184, 166, 0.18) 0,
-        rgba(20, 184, 166, 0.05) calc(var(--focus-r) * 0.5),
+        rgba(156, 163, 175, 0.18) 0,
+        rgba(156, 163, 175, 0.05) calc(var(--focus-r) * 0.5),
         rgba(0, 0, 0, 0.6) calc(var(--focus-r) * 1.2));
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-focus-box {
-      border-color: rgba(20, 184, 166, 0.85);
-      box-shadow: 0 0 0 9999px rgba(4, 6, 7, 0.35), 0 0 24px rgba(20, 184, 166, 0.4);
+      border-color: rgba(156, 163, 175, 0.85);
+      box-shadow: 0 0 0 9999px rgba(4, 6, 7, 0.4), 0 0 24px rgba(156, 163, 175, 0.35);
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-stat {
-      background: rgba(24, 21, 17, 0.92);
-      border-color: #3b332a;
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+      background: rgba(16, 16, 16, 0.92);
+      border-color: #262626;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-step-card {
-      background: rgba(24, 21, 17, 0.98);
-      border-color: #3b332a;
+      background: rgba(16, 16, 16, 0.98);
+      border-color: #262626;
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-main {
-      background: linear-gradient(180deg, rgba(22, 20, 17, 0.92), rgba(26, 23, 19, 0.98));
+      background: linear-gradient(180deg, rgba(12, 12, 12, 0.92), rgba(18, 18, 18, 0.98));
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-track-toggle {
-      background: rgba(24, 21, 17, 0.92);
-      border-color: #3b332a;
-      box-shadow: 0 12px 22px rgba(0, 0, 0, 0.35);
+      background: rgba(16, 16, 16, 0.92);
+      border-color: #262626;
+      box-shadow: 0 12px 22px rgba(0, 0, 0, 0.4);
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-track-note {
-      background: #231f19;
-      border-color: #3b332a;
-      color: #c2b4a5;
+      background: #151515;
+      border-color: #262626;
+      color: #9ca3af;
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-progress {
-      background: #2b251f;
+      background: #1f1f1f;
     }
     :root[data-theme="dark"] .onboarding-modal .onboard-dot {
-      background: #3b332a;
+      background: #2a2a2a;
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme]) .onboarding-modal .onboard-hero {
-        background: radial-gradient(circle at 20% 15%, rgba(35, 31, 26, 0.8), transparent 55%),
-          linear-gradient(135deg, rgba(16, 44, 40, 0.75), rgba(66, 40, 22, 0.7), rgba(18, 16, 14, 0.85));
+        background: radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.06), transparent 55%),
+          linear-gradient(135deg, rgba(18, 18, 18, 0.92), rgba(8, 8, 8, 0.98));
       }
       :root:not([data-theme]) .onboarding-modal .onboard-badge {
-        background: rgba(26, 22, 18, 0.9);
-        border-color: #3b332a;
-        color: #7ddfd4;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        background: rgba(12, 12, 12, 0.9);
+        border-color: #262626;
+        color: #d1d5db;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.45);
       }
       :root:not([data-theme]) .onboarding-modal .onboard-hero::before {
-        background: radial-gradient(circle at 30% 30%, rgba(20, 184, 166, 0.3), transparent 70%);
+        background: radial-gradient(circle at 30% 30%, rgba(156, 163, 175, 0.2), transparent 70%);
         opacity: 0.6;
       }
       :root:not([data-theme]) .onboarding-modal .onboard-hero::after {
-        background: radial-gradient(circle at 60% 40%, rgba(251, 146, 60, 0.26), transparent 70%);
+        background: radial-gradient(circle at 60% 40%, rgba(107, 114, 128, 0.22), transparent 70%);
         opacity: 0.6;
       }
       :root:not([data-theme]) .onboarding-modal .onboard-hero h2 {
@@ -6602,41 +6713,41 @@ EDITOR_TEMPLATE = """
       }
       :root:not([data-theme]) .onboarding-modal .onboard-focus {
         background: radial-gradient(circle at var(--focus-x) var(--focus-y),
-          rgba(20, 184, 166, 0.18) 0,
-          rgba(20, 184, 166, 0.05) calc(var(--focus-r) * 0.5),
+          rgba(156, 163, 175, 0.18) 0,
+          rgba(156, 163, 175, 0.05) calc(var(--focus-r) * 0.5),
           rgba(0, 0, 0, 0.6) calc(var(--focus-r) * 1.2));
       }
       :root:not([data-theme]) .onboarding-modal .onboard-focus-box {
-        border-color: rgba(20, 184, 166, 0.85);
-        box-shadow: 0 0 0 9999px rgba(4, 6, 7, 0.35), 0 0 24px rgba(20, 184, 166, 0.4);
+        border-color: rgba(156, 163, 175, 0.85);
+        box-shadow: 0 0 0 9999px rgba(4, 6, 7, 0.4), 0 0 24px rgba(156, 163, 175, 0.35);
       }
       :root:not([data-theme]) .onboarding-modal .onboard-stat {
-        background: rgba(24, 21, 17, 0.92);
-        border-color: #3b332a;
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+        background: rgba(16, 16, 16, 0.92);
+        border-color: #262626;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
       }
       :root:not([data-theme]) .onboarding-modal .onboard-step-card {
-        background: rgba(24, 21, 17, 0.98);
-        border-color: #3b332a;
+        background: rgba(16, 16, 16, 0.98);
+        border-color: #262626;
       }
       :root:not([data-theme]) .onboarding-modal .onboard-main {
-        background: linear-gradient(180deg, rgba(22, 20, 17, 0.92), rgba(26, 23, 19, 0.98));
+        background: linear-gradient(180deg, rgba(12, 12, 12, 0.92), rgba(18, 18, 18, 0.98));
       }
       :root:not([data-theme]) .onboarding-modal .onboard-track-toggle {
-        background: rgba(24, 21, 17, 0.92);
-        border-color: #3b332a;
-        box-shadow: 0 12px 22px rgba(0, 0, 0, 0.35);
+        background: rgba(16, 16, 16, 0.92);
+        border-color: #262626;
+        box-shadow: 0 12px 22px rgba(0, 0, 0, 0.4);
       }
       :root:not([data-theme]) .onboarding-modal .onboard-track-note {
-        background: #231f19;
-        border-color: #3b332a;
-        color: #c2b4a5;
+        background: #151515;
+        border-color: #262626;
+        color: #9ca3af;
       }
       :root:not([data-theme]) .onboarding-modal .onboard-progress {
-        background: #2b251f;
+        background: #1f1f1f;
       }
       :root:not([data-theme]) .onboarding-modal .onboard-dot {
-        background: #3b332a;
+        background: #2a2a2a;
       }
     }
     .onboard-track-note {
@@ -6853,11 +6964,11 @@ EDITOR_TEMPLATE = """
 
     @keyframes onboard-pulse {
 
-      0% { box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.18), 0 0 18px rgba(15, 118, 110, 0.45); }
+      0% { box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.18), 0 0 18px rgba(0, 0, 0, 0.25); }
 
-      50% { box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.22), 0 0 32px rgba(15, 118, 110, 0.6); }
+      50% { box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.22), 0 0 32px rgba(107, 114, 128, 0.35); }
 
-      100% { box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.18), 0 0 18px rgba(15, 118, 110, 0.45); }
+      100% { box-shadow: 0 0 0 9999px rgba(5, 8, 10, 0.18), 0 0 18px rgba(0, 0, 0, 0.25); }
 
     }
 
@@ -7695,16 +7806,75 @@ EDITOR_TEMPLATE = """
 
       <div class="theme-control">
 
-        <label for="theme_select">Theme</label>
+        <label>Theme</label>
 
-        <select id="theme_select">
+        <div class="theme-picker" id="theme_picker" role="radiogroup" aria-label="Theme">
+          <button type="button" class="theme-option" data-theme="system" aria-pressed="false">
+            <span class="theme-swatch" data-theme="system"></span>
+            <span>System</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="light" aria-pressed="false">
+            <span class="theme-swatch" data-theme="light"></span>
+            <span>Light</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="dark" aria-pressed="false">
+            <span class="theme-swatch" data-theme="dark"></span>
+            <span>Dark</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="stellar" aria-pressed="false">
+            <span class="theme-swatch" data-theme="stellar"></span>
+            <span>Stellar</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="nebula" aria-pressed="false">
+            <span class="theme-swatch" data-theme="nebula"></span>
+            <span>Nebula</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="solar" aria-pressed="false">
+            <span class="theme-swatch" data-theme="solar"></span>
+            <span>Solar</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="lunar" aria-pressed="false">
+            <span class="theme-swatch" data-theme="lunar"></span>
+            <span>Lunar</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="eclipse" aria-pressed="false">
+            <span class="theme-swatch" data-theme="eclipse"></span>
+            <span>Eclipse</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="aurora" aria-pressed="false">
+            <span class="theme-swatch" data-theme="aurora"></span>
+            <span>Aurora</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="cosmos" aria-pressed="false">
+            <span class="theme-swatch" data-theme="cosmos"></span>
+            <span>Cosmos</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="supernova" aria-pressed="false">
+            <span class="theme-swatch" data-theme="supernova"></span>
+            <span>Supernova</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="void" aria-pressed="false">
+            <span class="theme-swatch" data-theme="void"></span>
+            <span>Void</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="orbit" aria-pressed="false">
+            <span class="theme-swatch" data-theme="orbit"></span>
+            <span>Orbit</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="plasma" aria-pressed="false">
+            <span class="theme-swatch" data-theme="plasma"></span>
+            <span>Plasma</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="meteor" aria-pressed="false">
+            <span class="theme-swatch" data-theme="meteor"></span>
+            <span>Meteor</span>
+          </button>
+        </div>
 
+        <select id="theme_select" class="theme-select" aria-hidden="true" tabindex="-1">
           <option value="system">System</option>
-
           <option value="light">Light</option>
-
           <option value="dark">Dark</option>
-
           <option value="stellar">Stellar</option>
           <option value="nebula">Nebula</option>
           <option value="solar">Solar</option>
@@ -7717,7 +7887,6 @@ EDITOR_TEMPLATE = """
           <option value="orbit">Orbit</option>
           <option value="plasma">Plasma</option>
           <option value="meteor">Meteor</option>
-
         </select>
 
       </div>
@@ -9911,6 +10080,7 @@ EDITOR_TEMPLATE = """
   const saveStatusEl = document.getElementById('save_status');
 
   const themeSelect = document.getElementById('theme_select');
+  const themeButtons = document.querySelectorAll('.theme-option');
 
   const modeToggleEl = document.getElementById('mode_toggle');
 
@@ -11957,17 +12127,29 @@ EDITOR_TEMPLATE = """
 
   function applyTheme(mode) {
 
-    if (mode === 'system') {
+    const next = mode || 'system';
+
+    if (next === 'system') {
 
       document.documentElement.removeAttribute('data-theme');
 
     } else {
 
-      document.documentElement.setAttribute('data-theme', mode);
+      document.documentElement.setAttribute('data-theme', next);
 
     }
 
-    localStorage.setItem('theme', mode);
+    localStorage.setItem('theme', next);
+
+    if (themeSelect) {
+      themeSelect.value = next;
+    }
+
+    themeButtons.forEach((btn) => {
+      const active = btn.dataset.theme === next;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
 
   }
 
@@ -11977,14 +12159,18 @@ EDITOR_TEMPLATE = """
 
     const saved = localStorage.getItem('theme') || 'system';
 
-    themeSelect.value = saved;
-
     applyTheme(saved);
 
-    themeSelect.addEventListener('change', (event) => {
+    if (themeSelect) {
+      themeSelect.addEventListener('change', (event) => {
 
-      applyTheme(event.target.value);
+        applyTheme(event.target.value);
 
+      });
+    }
+
+    themeButtons.forEach((btn) => {
+      btn.addEventListener('click', () => applyTheme(btn.dataset.theme || 'system'));
     });
 
   }
