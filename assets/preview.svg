@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b0b0f"/>
+      <stop offset="100%" stop-color="#1f1a14"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1c1914"/>
+      <stop offset="100%" stop-color="#12100d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="60" y="60" width="1080" height="600" rx="18" fill="url(#panel)" stroke="#2e2922"/>
+  <rect x="90" y="100" width="260" height="520" rx="14" fill="#15130f" stroke="#2e2922"/>
+  <rect x="380" y="100" width="720" height="520" rx="14" fill="#171510" stroke="#2e2922"/>
+  <rect x="410" y="140" width="250" height="36" rx="10" fill="#0f766e"/>
+  <text x="420" y="164" font-size="14" font-family="Arial, sans-serif" fill="#ecfeff">Simple Generator</text>
+  <rect x="410" y="200" width="650" height="120" rx="12" fill="#1d1a15" stroke="#2e2922"/>
+  <rect x="410" y="340" width="650" height="200" rx="12" fill="#1d1a15" stroke="#2e2922"/>
+  <rect x="420" y="560" width="120" height="36" rx="18" fill="#14b8a6"/>
+  <text x="446" y="584" font-size="14" font-family="Arial, sans-serif" fill="#0f172a">Compile</text>
+  <text x="90" y="40" font-size="14" font-family="Arial, sans-serif" fill="#94a3b8">Preview mockup</text>
+</svg>
