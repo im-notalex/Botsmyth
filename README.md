@@ -4,24 +4,55 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-0f766e)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-2.x-111827)](https://flask.palletsprojects.com/)
-[![Local First](https://img.shields.io/badge/Local--First-Data%20stays%20on%20your%20machine-0ea5e9)](#data--storage)
-[![Status](https://img.shields.io/badge/Status-Active-22c55e)](#)
+[![Local First](https://img.shields.io/badge/Local--First-Data%20stays%20on%20your%20machine-0ea5e9)](#data-and-storage)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-64748b)](#quick-start)
+[![UI](https://img.shields.io/badge/UI-Single%20File%20App-10b981)](#project-layout)
+[![Vision](https://img.shields.io/badge/Vision-Image--Aware%20Generation-14b8a6)](#image-workflow)
+[![Exports](https://img.shields.io/badge/Exports-Card%20v2%20%7C%20Janitor%20%7C%20Risu%20%7C%20PNG-6366f1)](#exports)
+[![License](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
 
-Build, tune, and export image-aware RP bots with a fast Simple flow and full Advanced control. Generate polished character packs (Description, First Messages, Scenario, Example Dialogues), test vision, and export to popular card formats.
+Botsmyth is a local-first RP bot builder with a fast Simple flow and full Advanced control. Create polished character packs (Description, First Messages, Scenario, Example Dialogues), test vision, and export to popular card formats.
+
+Main QoL start: `quickstart.bat` auto-installs requirements and launches the app on Windows.
 
 ![App Preview](assets/preview.svg)
 
-## Highlights
-- Simple + Advanced modes with a guided onboarding tour
-- Compile workflow that generates the full 4‑section pack in one pass
-- Image uploads with vision-aware generation and a built-in image viewer
-- Token target presets per section for predictable output length
-- Local autosave + version history
-- Export to Card v2, Janitor, Risu, Prompt TXT, and PNG
+## Table of contents
+- About
+- Features
+- Quick start
+- Configuration
+- Usage
+- Image workflow
+- Output length targets
+- Exports
+- Project layout
+- Data and storage
+- Troubleshooting
+- FAQ
+- License
 
-## Quick Start
-### Windows (recommended)
-1) Double‑click `quickstart.bat`
+## About
+Botsmyth keeps your data on your machine while giving you a modern, image-aware workflow. It is a single-file Flask app with embedded HTML/CSS/JS for quick edits and easy sharing.
+
+## Features
+- Simple and Advanced modes with a guided onboarding tour
+- Compile workflow that generates the full 4-section pack in one pass
+- Image uploads with vision-aware generation and an in-app image viewer
+- Library cards with stacked image previews for quick visual scanning
+- Token target presets per section for predictable output length
+- Local autosave and version history
+- Test chat with Assistant or In-Character modes
+- Exports to Card v2, Janitor, Risu, Prompt TXT, and PNG
+- One-click `quickstart.bat` launcher for Windows
+- Model-agnostic provider support with OpenAI-compatible endpoints
+
+## Quick start
+### Requirements
+- Python 3.10+
+
+### Quickstart.bat (main QoL)
+1) Double-click `quickstart.bat`
 2) The script installs requirements if needed and launches the app
 
 ### Manual
@@ -31,55 +62,92 @@ python -m venv .venv
 pip install -r requirements.txt
 python botmaker.py
 ```
-Or, if you're on ***Windows,***
-Open a terminal in the directory quickstart.bat is stored in, and type 
-```bash
-.\quickstart.bat
-```
-And it will automatically install all requirements AND open the app.
 
 Open `http://localhost:8000` in your browser.
 
+## Configuration
+Set these in the **AI Settings** panel:
+- Provider, model, base URL, API key
+- Max tokens and temperature
+- Use images (vision)
+
+Environment variables:
+- `PORT` (default: `8000`)
+
+For custom endpoints, pick **OpenAI Compatible** and set your base URL and model.
+
 ## Usage
-1) **Simple Generator**: add original input + optional name/age/species.
-2) **Generate**: create descriptions, first messages, scenarios, and dialogues.
-3) **Compile**: produce a clean 4‑section export‑ready pack.
-4) **Apply Outputs**: push compiled outputs into the editable fields.
-5) **Export**: choose Card v2/Janitor/Risu/Prompt/PNG.
+### Simple flow
+1) Add Original Input (and optional name/age/species)
+2) Generate Simple to get a starter kit
+3) Compile for a clean export-ready pack
+4) Apply Outputs to push results into the main fields
 
-## Image Workflow
-- Upload up to the configured max images.
-- Click any image to open the **Image Viewer**.
-- Library cards show a stacked carousel preview of the bot’s images.
+### Advanced flow
+1) Enable Advanced mode
+2) Generate All or per-section outputs
+3) Tune any field, lists, and toggles
+4) Compile and Export when ready
 
-## Output Length Targets
-In **Compile**, set minimum token targets for:
+## Image workflow
+- Upload up to the configured max images
+- Click any image to open the Image Viewer
+- Library cards show a stacked carousel preview of bot images
+
+## Output length targets
+In Compile, set minimum token targets for:
 - Description
 - First Messages (total)
 - Scenario
 - Example Dialogues (total)
 
-Choose Auto, Low, Medium, High, Very High, or Extreme depending on the output you want.
+Pick Auto, Low, Medium, High, Very High, or Extreme based on how long you want each section.
 
-## Data & Storage
-- All data is stored locally in `data/`
-- Images are stored in `data/images`
-- Settings are stored in `data/settings.json`
+## Exports
+- Card v2 (Chub/Tavern)
+- Janitor JSON
+- Risu JSON
+- Prompt TXT
+- PNG with optional embedded card data
 
-## Tech Stack
-- Python + Flask backend
-- HTML/CSS/JS single‑file UI (`botmaker.py`)
-- Optional vision support for supported providers
+## Project layout
+- `botmaker.py` - single-file app (backend + UI)
+- `quickstart.bat` - Windows installer/launcher
+- `requirements.txt` - Python dependencies
+- `data/` - local storage for bots, images, and exports
+- `assets/` - README visuals
+
+## Data and storage
+All data is stored locally:
+- `data/bots.json` for bot profiles and lists
+- `data/images/` for uploaded images
+- `data/exports/` for exported files
+- `data/settings.json` for app settings
+
+Autosave history is also stored in your browser local storage.
+
+## Troubleshooting
+**Outputs are too short**  
+Increase Max Tokens, enable High Quality, and set Output Length targets.
+
+**Compile returns empty output**  
+Check your API key, model, and max tokens. Try a smaller model or lower temperature.
+
+**Images do not appear**  
+Ensure the image upload completed and that you are under the max image limit.
 
 ## FAQ
 **Where is the UI code?**  
-The full UI (HTML/CSS/JS) lives inside `botmaker.py`.
+The UI (HTML/CSS/JS) lives inside `botmaker.py`.
 
 **Can I use my own model endpoint?**  
 Yes. Use **OpenAI Compatible** and set your base URL and model.
 
 **How do I improve quality?**  
-Increase Max Tokens, enable High Quality mode, and set Output Length targets.
+Increase Max Tokens, enable High Quality, and set Output Length targets.
+
+**What does Botsmyth store and where?**  
+Bots, images, exports, and settings live in the local `data/` folder.
 
 ## License
-Under the MIT license. Do whatever you want with this, lmao.
+MIT License. See `LICENSE`.
