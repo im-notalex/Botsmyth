@@ -1473,6 +1473,7 @@ def strip_emojis(text: str) -> str:
 def sanitize_text(text: str, allow_emojis: bool) -> str:
 
     cleaned = (text or "").strip()
+    cleaned = cleaned.replace("\u2014", "-")
 
     if allow_emojis:
 
@@ -1891,6 +1892,8 @@ def build_profile_prompt(bot: Dict[str, Any], notes: str, allowed_fields: List[s
 
         "Only include keys from the list. Use empty strings if unknown.\n\n"
 
+        "Do not use em dashes.\n"
+
         f"{min_line}"
 
         f"Known details:\n{context}\n\n"
@@ -1934,6 +1937,8 @@ def build_field_prompt(bot: Dict[str, Any], field_key: str, notes: str) -> str:
         f"{{\"{field_key}\": \"...\"}}\n\n"
 
         f"{min_line}"
+
+        "Do not use em dashes.\n"
 
         f"Known details:\n{context}\n\n"
 
@@ -2078,7 +2083,9 @@ def build_first_messages_prompt(bot: Dict[str, Any], count: int, notes: str) -> 
 
         "Write high-quality, clean prose with careful detail.\n"
 
-        "If a reference first message is provided, match its tone, POV, formatting, and length closely.\n"
+        "If a reference first message is provided, treat it as a 1:1 style blueprint.\n"
+        "Match its voice, cadence, punctuation, line breaks, POV, and overall structure as closely as possible.\n"
+        "Do not use em dashes.\n"
 
         f"{min_line}"
 
@@ -2128,6 +2135,8 @@ def build_scenarios_prompt(bot: Dict[str, Any], count: int, notes: str) -> str:
 
         f"{min_line}"
 
+        "Do not use em dashes.\n"
+
         "If you reference names, use {{char}} and {{user}}.\n"
 
         "Return JSON only: {\"scenarios\": [\"...\"]}.\n\n"
@@ -2163,6 +2172,8 @@ def build_dialogues_prompt(bot: Dict[str, Any], count: int, notes: str) -> str:
         f"Create {count} example dialogue pairs between user and bot.\n"
 
         f"{min_line}"
+
+        "Do not use em dashes.\n"
 
         "If you reference names, use {{user}} and {{char}} instead of proper names.\n"
 
@@ -2322,11 +2333,14 @@ def build_simple_prompt(bot: Dict[str, Any], simple_input: str, dialogue_count: 
 
         f"{token_block}"
 
+        "Do not use em dashes.\n"
+
         "If you reference names, use {{user}} and {{char}}.\n"
 
         "If existing messages, scenarios, or dialogues are provided, create new ones and avoid repeats.\n"
 
-        "If existing first messages are provided, match their tone and formatting while keeping content new.\n"
+        "If existing first messages are provided, treat them as a 1:1 style blueprint.\n"
+        "Match voice, cadence, punctuation, line breaks, POV, and structure while keeping content new.\n"
 
         f"dialogues should include {dialogue_count} pairs of {{\"user\": \"...\", \"bot\": \"...\"}}.\n\n"
 
@@ -2456,9 +2470,12 @@ def build_compile_prompt(bot: Dict[str, Any], notes: str) -> str:
 
         f"{total_line}"
 
-        "If a reference first message is provided, match its tone, POV, formatting, and length closely.\n"
+        "If a reference first message is provided, treat it as a 1:1 style blueprint for the first messages.\n"
+        "Match its voice, cadence, punctuation, line breaks, POV, and overall structure as closely as possible.\n"
 
         "If you reference names, use {{user}} and {{char}}.\n"
+
+        "Do not use em dashes.\n"
 
         "Keep it clean: no meta commentary, no markdown, no bullet points in output strings.\n\n"
 
