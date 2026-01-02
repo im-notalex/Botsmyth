@@ -31,6 +31,12 @@ python -m venv .venv
 pip install -r requirements.txt
 python botmaker.py
 ```
+Or, if you're on ***Windows,***
+Open a terminal in the directory quickstart.bat is stored in, and type 
+```bash
+.\quickstart.bat
+```
+And it will automatically install all requirements AND open the app.
 
 Open `http://localhost:8000` in your browser.
 
