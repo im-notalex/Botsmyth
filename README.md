@@ -76,4 +76,4 @@ Yes. Use **OpenAI Compatible** and set your base URL and model.
 Increase Max Tokens, enable High Quality mode, and set Output Length targets.
 
 ## License
-No license specified. Add one if you intend to distribute this publicly.
+Under the MIT license. Do whatever you want with this, lmao.
