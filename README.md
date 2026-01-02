@@ -2,14 +2,16 @@
 
 ![Botsmyth Hero](assets/hero.svg)
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-0f766e)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-2.x-111827)](https://flask.palletsprojects.com/)
-[![Local First](https://img.shields.io/badge/Local--First-Data%20stays%20on%20your%20machine-0ea5e9)](#data-and-storage)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-64748b)](#quick-start)
-[![UI](https://img.shields.io/badge/UI-Single%20File%20App-10b981)](#project-layout)
-[![Vision](https://img.shields.io/badge/Vision-Image--Aware%20Generation-14b8a6)](#image-workflow)
-[![Exports](https://img.shields.io/badge/Exports-Card%20v2%20%7C%20Janitor%20%7C%20Risu%20%7C%20PNG-6366f1)](#exports)
-[![License](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-0f766e?logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.x-111827?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Requests](https://img.shields.io/badge/Requests-HTTP%20Client-334155?logo=python&logoColor=white)](https://requests.readthedocs.io/)
+[![Pillow](https://img.shields.io/badge/Pillow-Image%20Processing-1f2937?logo=python&logoColor=white)](https://python-pillow.org/)
+[![Local First](https://img.shields.io/badge/Local--First-Data%20stays%20on%20your%20machine-0ea5e9?logo=lock&logoColor=white)](#data-and-storage)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-64748b?logo=windows&logoColor=white)](#quick-start)
+[![UI](https://img.shields.io/badge/UI-Single%20File%20App-10b981?logo=html5&logoColor=white)](#project-layout)
+[![Vision](https://img.shields.io/badge/Vision-Image--Aware%20Generation-14b8a6?logo=opencollective&logoColor=white)](#image-workflow)
+[![Exports](https://img.shields.io/badge/Exports-Card%20v2%20%7C%20Janitor%20%7C%20Risu%20%7C%20PNG-6366f1?logo=files&logoColor=white)](#exports)
+[![License](https://img.shields.io/badge/License-MIT-22c55e?logo=opensourceinitiative&logoColor=white)](LICENSE)
 
 Botsmyth is a local-first RP bot builder with a fast Simple flow and full Advanced control. Create polished character packs (Description, First Messages, Scenario, Example Dialogues), test vision, and export to popular card formats.
 
@@ -50,6 +52,7 @@ Botsmyth keeps your data on your machine while giving you a modern, image-aware 
 ## Quick start
 ### Requirements
 - Python 3.10+
+- Dependencies: Flask, Requests, Pillow (installed via `requirements.txt`)
 
 ### Quickstart.bat (main QoL)
 1) Double-click `quickstart.bat`
