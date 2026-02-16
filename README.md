@@ -154,3 +154,10 @@ Bots, images, exports, and settings live in the local `data/` folder.
 
 ## License
 MIT License. See `LICENSE`.
+
+## Why AGPL?
+This project uses AGPL-3.0 to ensure that if anyone hosts a modified 
+version as a public service, users have access to that modified source 
+code. Since these tools handle personal creative content, transparency 
+is important. Run it locally and modify freely - the license only 
+requires sharing if you make it a public web service. Keep it local, or keep it open.
