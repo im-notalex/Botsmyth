@@ -63,7 +63,7 @@ Botsmyth keeps your data on your machine while giving you a modern, image-aware 
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
-python botmaker.py
+python botsmyth.py
 ```
 
 Open `http://localhost:8000` in your browser.
@@ -114,7 +114,7 @@ Pick Auto, Low, Medium, High, Very High, or Extreme based on how long you want e
 - PNG with optional embedded card data
 
 ## Project layout
-- `botmaker.py` - single-file app (backend + UI)
+- `botsmyth.py` - single-file app (backend + UI)
 - `quickstart.bat` - Windows installer/launcher
 - `requirements.txt` - Python dependencies
 - `data/` - local storage for bots, images, and exports
@@ -141,7 +141,7 @@ Ensure the image upload completed and that you are under the max image limit.
 
 ## FAQ
 **Where is the UI code?**  
-The UI (HTML/CSS/JS) lives inside `botmaker.py`.
+The UI (HTML/CSS/JS) lives inside `botsmyth.py`.
 
 **Can I use my own model endpoint?**  
 Yes. Use **OpenAI Compatible** and set your base URL and model.
