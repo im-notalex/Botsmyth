@@ -52,6 +52,8 @@ DEFAULT_SETTINGS = {
     "base_url": PROVIDER_DEFAULTS["openai"]["base_url"],
     "temperature": 0.7,
     "max_tokens": 1200,
+    "timeout_seconds": 90,
+    "experimental_text_streaming": False,
     "use_images": True,
     "creator_name": "",
     "autosave_seconds": 30,
@@ -161,6 +163,11 @@ DEFAULT_FIELDS = {
     "simple_current_first_messages": "",
     "simple_current_scenarios": "",
     "simple_current_dialogues": "",
+    "refine_personality": "",
+    "refine_notes": "",
+    "refine_first_messages": "",
+    "refine_scenarios": "",
+    "refine_dialogues": "",
     "min_tokens_description": "auto",
     "min_tokens_first_messages": "auto",
     "min_tokens_scenario": "auto",
@@ -336,6 +343,11 @@ NON_GENERATABLE_FIELDS = {
     "simple_current_first_messages",
     "simple_current_scenarios",
     "simple_current_dialogues",
+    "refine_personality",
+    "refine_notes",
+    "refine_first_messages",
+    "refine_scenarios",
+    "refine_dialogues",
     "min_tokens_description",
     "min_tokens_first_messages",
     "min_tokens_scenario",
@@ -424,6 +436,12 @@ def load_settings() -> Dict[str, Any]:
         merged["autosave_seconds"] = int(merged.get("autosave_seconds", DEFAULT_SETTINGS["autosave_seconds"]))
     except Exception:
         merged["autosave_seconds"] = DEFAULT_SETTINGS["autosave_seconds"]
+    try:
+        merged["timeout_seconds"] = int(merged.get("timeout_seconds", DEFAULT_SETTINGS["timeout_seconds"]))
+    except Exception:
+        merged["timeout_seconds"] = DEFAULT_SETTINGS["timeout_seconds"]
+    merged["timeout_seconds"] = max(10, min(600, merged["timeout_seconds"]))
+    merged["experimental_text_streaming"] = bool(merged.get("experimental_text_streaming", False))
     provider = merged.get("provider", "openai")
     defaults = PROVIDER_DEFAULTS.get(provider, PROVIDER_DEFAULTS["openai"])
     if not merged.get("model"):
@@ -451,6 +469,18 @@ def ensure_bot_defaults(bot: Dict[str, Any]) -> Dict[str, Any]:
     ):
         if not isinstance(bot.get(key), list):
             bot[key] = []
+    generated = bot.get("generated_content")
+    if not isinstance(generated, dict):
+        generated = {}
+    generated.setdefault("personality_chunks", [])
+    generated.setdefault("first_messages", [])
+    generated.setdefault("scenarios", [])
+    generated.setdefault("dialogues", [])
+    generated["personality_chunks"] = normalize_str_list_any(generated.get("personality_chunks", []))
+    generated["first_messages"] = normalize_str_list_any(generated.get("first_messages", []))
+    generated["scenarios"] = normalize_str_list_any(generated.get("scenarios", []))
+    generated["dialogues"] = normalize_dialogues_any(generated.get("dialogues", []))
+    bot["generated_content"] = generated
     return bot
 def new_bot() -> Dict[str, Any]:
     bot_id = uuid.uuid4().hex[:10]
@@ -583,6 +613,23 @@ def normalize_str_list(items: Any) -> List[str]:
             if cleaned:
                 out.append(cleaned)
     return out
+def normalize_str_list_any(items: Any) -> List[str]:
+    if isinstance(items, list):
+        return normalize_str_list(items)
+    if isinstance(items, str):
+        return [line.strip() for line in items.splitlines() if line.strip()]
+    return []
+def normalize_text_block_list(text: Any) -> List[str]:
+    if text is None:
+        return []
+    if isinstance(text, list):
+        return normalize_str_list(text)
+    if not isinstance(text, str):
+        return []
+    cleaned = text.strip()
+    if not cleaned:
+        return []
+    return [cleaned]
 def normalize_dialogues(items: Any) -> List[Dict[str, str]]:
     if not isinstance(items, list):
         return []
@@ -595,6 +642,92 @@ def normalize_dialogues(items: Any) -> List[Dict[str, str]]:
         if user or bot:
             out.append({"user": user, "bot": bot})
     return out
+def parse_dialogues_text(text: Any) -> List[Dict[str, str]]:
+    if text is None:
+        return []
+    if isinstance(text, list):
+        return normalize_dialogues(text)
+    if not isinstance(text, str):
+        return []
+    items: List[Dict[str, str]] = []
+    pending_user = ""
+    pending_bot = ""
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        lowered = line.lower()
+        if lowered.startswith("{{user}}:") or lowered.startswith("user:"):
+            if pending_user or pending_bot:
+                items.append({"user": pending_user.strip(), "bot": pending_bot.strip()})
+                pending_user = ""
+                pending_bot = ""
+            pending_user = line.split(":", 1)[1].strip() if ":" in line else ""
+            continue
+        if lowered.startswith("{{char}}:") or lowered.startswith("char:") or lowered.startswith("bot:"):
+            pending_bot = line.split(":", 1)[1].strip() if ":" in line else ""
+            if pending_user or pending_bot:
+                items.append({"user": pending_user.strip(), "bot": pending_bot.strip()})
+                pending_user = ""
+                pending_bot = ""
+            continue
+        if not pending_user:
+            pending_user = line
+        elif not pending_bot:
+            pending_bot = line
+            items.append({"user": pending_user.strip(), "bot": pending_bot.strip()})
+            pending_user = ""
+            pending_bot = ""
+        else:
+            pending_bot = f"{pending_bot}\n{line}"
+    if pending_user or pending_bot:
+        items.append({"user": pending_user.strip(), "bot": pending_bot.strip()})
+    return normalize_dialogues(items)
+def normalize_dialogues_any(items: Any) -> List[Dict[str, str]]:
+    if isinstance(items, list):
+        return normalize_dialogues(items)
+    if isinstance(items, str):
+        return parse_dialogues_text(items)
+    return []
+def unpack_text_value(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        return "\n".join(normalize_str_list_any(value)).strip()
+    if isinstance(value, dict):
+        for key in ("patch", "addition", "additions", "refinement", "text", "content", "personality"):
+            if key in value:
+                picked = unpack_text_value(value.get(key))
+                if picked:
+                    return picked
+        parts = [unpack_text_value(item) for item in value.values()]
+        merged = "\n".join(part for part in parts if part).strip()
+        return merged
+    return ""
+def extract_personality_patch(data: Dict[str, Any]) -> str:
+    if not isinstance(data, dict):
+        return ""
+    for key in (
+        "personality",
+        "personality_patch",
+        "refined_personality",
+        "personality_addition",
+        "personality_additions",
+    ):
+        if key in data:
+            text = unpack_text_value(data.get(key))
+            if text and text not in {"{}", "[]", "null", "None", "none"}:
+                return text
+    return ""
+def flatten_refinement_payload(data: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(data, dict):
+        return {}
+    merged: Dict[str, Any] = dict(data)
+    for key in ("refined", "outputs", "result", "data"):
+        nested = data.get(key)
+        if isinstance(nested, dict):
+            merged.update(nested)
+    return merged
 def normalize_lorebook(items: Any) -> List[Dict[str, Any]]:
     if not isinstance(items, list):
         return []
@@ -672,6 +805,104 @@ def sanitize_dialogues(items: List[Dict[str, str]], allow_emojis: bool) -> List[
         if user or bot:
             out.append({"user": user, "bot": bot})
     return out
+BAD_GENERATED_VALUES = {
+    "scenario",
+    "scenarios",
+    "dialogue",
+    "dialogues",
+    "personality",
+    "first message",
+    "first messages",
+    "first_message",
+    "first_messages",
+}
+def is_bad_generated_value(text: str) -> bool:
+    cleaned = re.sub(r"[^a-z_ ]", "", (text or "").strip().lower()).strip()
+    return cleaned in BAD_GENERATED_VALUES
+def filter_generated_strings(items: List[str]) -> List[str]:
+    out: List[str] = []
+    for item in items:
+        cleaned = (item or "").strip()
+        if not cleaned:
+            continue
+        if is_bad_generated_value(cleaned):
+            continue
+        out.append(cleaned)
+    return out
+def is_user_heavy_text(text: str) -> bool:
+    lowered = (text or "").lower()
+    user_refs = lowered.count("{{user}}")
+    char_refs = lowered.count("{{char}}")
+    return user_refs > 1 and char_refs == 0
+def filter_character_focused_scenarios(items: List[str], strict: bool = False) -> List[str]:
+    out: List[str] = []
+    for item in items:
+        cleaned = (item or "").strip()
+        if not cleaned or is_bad_generated_value(cleaned):
+            continue
+        if is_user_heavy_text(cleaned):
+            continue
+        if strict and cleaned.lower().count("{{user}}") > 0 and cleaned.lower().count("{{char}}") == 0:
+            continue
+        out.append(cleaned)
+    return out
+def filter_character_focused_dialogues(items: List[Dict[str, str]], strict: bool = False) -> List[Dict[str, str]]:
+    out: List[Dict[str, str]] = []
+    for pair in items:
+        user = str(pair.get("user", "")).strip()
+        bot = str(pair.get("bot", "")).strip()
+        if not bot or is_bad_generated_value(bot):
+            continue
+        if bot.lower().count("{{user}}") > 1:
+            continue
+        if strict and bot.lower().count("{{user}}") > 0 and bot.lower().count("{{char}}") == 0:
+            continue
+        out.append({"user": user, "bot": bot})
+    return out
+def _dialogue_fingerprint(pair: Dict[str, str]) -> str:
+    return json.dumps(
+        {
+            "user": str(pair.get("user", "")).strip(),
+            "bot": str(pair.get("bot", "")).strip(),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+def track_generated_personality(bot: Dict[str, Any], text: str) -> None:
+    cleaned = str(text or "").strip()
+    if not cleaned:
+        return
+    generated = bot.setdefault("generated_content", {})
+    chunks = normalize_str_list_any(generated.get("personality_chunks", []))
+    if cleaned not in chunks:
+        chunks.append(cleaned)
+    generated["personality_chunks"] = chunks
+def track_generated_strings(bot: Dict[str, Any], key: str, items: List[str]) -> None:
+    if key not in {"first_messages", "scenarios"}:
+        return
+    generated = bot.setdefault("generated_content", {})
+    current = normalize_str_list_any(generated.get(key, []))
+    for item in normalize_str_list_any(items):
+        if item not in current:
+            current.append(item)
+    generated[key] = current
+def track_generated_dialogues(bot: Dict[str, Any], items: List[Dict[str, str]]) -> None:
+    generated = bot.setdefault("generated_content", {})
+    current = normalize_dialogues_any(generated.get("dialogues", []))
+    seen = {_dialogue_fingerprint(item) for item in current}
+    for item in normalize_dialogues_any(items):
+        fp = _dialogue_fingerprint(item)
+        if fp not in seen:
+            current.append(item)
+            seen.add(fp)
+    generated["dialogues"] = current
+def strip_generated_personality(current: str, chunks: List[str]) -> str:
+    out = str(current or "")
+    for chunk in normalize_str_list_any(chunks):
+        if chunk:
+            out = out.replace(chunk, "")
+    out = re.sub(r"\n{3,}", "\n\n", out)
+    return out.strip()
 DESCRIPTION_SECTION_LABELS = [
     "Name",
     "Age",
@@ -895,7 +1126,7 @@ def parse_min_tokens(value: Any) -> Optional[int]:
         num = int(value)
     else:
         text = str(value).strip().lower()
-        if not text or text in {"auto", "default", "none"}:
+        if not text or text in {"auto", "default", "none", "off"}:
             return None
         if text in TOKEN_PRESET_MAP:
             return TOKEN_PRESET_MAP[text]
@@ -912,6 +1143,17 @@ def parse_min_tokens(value: Any) -> Optional[int]:
 def get_min_tokens(bot: Dict[str, Any], field_key: str) -> Optional[int]:
     fields = bot.get("fields", {})
     return parse_min_tokens(fields.get(field_key))
+def has_priority_min_tokens(bot: Dict[str, Any], field_key: str) -> bool:
+    fields = bot.get("fields", {})
+    raw = str(fields.get(field_key, "") or "").strip().lower()
+    if raw == "extreme":
+        return True
+    parsed = parse_min_tokens(raw)
+    return bool(parsed and parsed >= 1500)
+def is_compile_section_enabled(bot: Dict[str, Any], field_key: str) -> bool:
+    fields = bot.get("fields", {})
+    mode = str(fields.get(field_key, "") or "").strip().lower()
+    return mode != "off"
 def build_first_messages_prompt(bot: Dict[str, Any], count: int, notes: str) -> str:
     context = build_context(bot)
     notes = notes.strip() if notes else "None"
@@ -921,6 +1163,11 @@ def build_first_messages_prompt(bot: Dict[str, Any], count: int, notes: str) -> 
     if min_tokens:
         min_line = (
             f"Aim for at least ~{min_tokens} tokens total across all first messages while preserving style.\n"
+        )
+    priority_line = ""
+    if min_tokens and has_priority_min_tokens(bot, "min_tokens_first_messages"):
+        priority_line = (
+            f"PRIORITY MINIMUM: first_messages must be at least ~{min_tokens} tokens total. Treat this as a hard floor.\n"
         )
     reference_block = ""
     if reference:
@@ -933,6 +1180,7 @@ def build_first_messages_prompt(bot: Dict[str, Any], count: int, notes: str) -> 
         "Match its voice, cadence, punctuation, line breaks, POV, and overall structure as closely as possible.\n"
         "Do not use em dashes.\n"
         f"{min_line}"
+        f"{priority_line}"
         "If you reference names, use {{char}} for the bot and {{user}} for the user.\n"
         "Return JSON only: {\"first_messages\": [\"...\"]}.\n\n"
         f"{reference_block}"
@@ -950,10 +1198,18 @@ def build_scenarios_prompt(bot: Dict[str, Any], count: int, notes: str) -> str:
             f"Aim for at least ~{min_tokens} tokens total across all scenarios. "
             "If that conflicts with the sentence limit, maximize detail while keeping 1 to 3 sentences.\n"
         )
+    priority_line = ""
+    if min_tokens and has_priority_min_tokens(bot, "min_tokens_scenario"):
+        priority_line = (
+            f"PRIORITY MINIMUM: scenarios must be at least ~{min_tokens} tokens total. Treat this as a hard floor.\n"
+        )
     return (
         f"Create {count} short scenario hooks for this RP bot.\n"
         "Each scenario should be 1 to 3 sentences.\n"
+        "Focus on {{char}} personality, tone, and world context.\n"
+        "Do not center scenarios on describing {{user}}.\n"
         f"{min_line}"
+        f"{priority_line}"
         "Do not use em dashes.\n"
         "If you reference names, use {{char}} and {{user}}.\n"
         "Return JSON only: {\"scenarios\": [\"...\"]}.\n\n"
@@ -968,13 +1224,121 @@ def build_dialogues_prompt(bot: Dict[str, Any], count: int, notes: str) -> str:
     min_tokens = get_min_tokens(bot, "min_tokens_dialogues")
     if min_tokens:
         min_line = f"Aim for at least ~{min_tokens} tokens total across all dialogue pairs.\n"
+    priority_line = ""
+    if min_tokens and has_priority_min_tokens(bot, "min_tokens_dialogues"):
+        priority_line = (
+            f"PRIORITY MINIMUM: dialogues must be at least ~{min_tokens} tokens total. Treat this as a hard floor.\n"
+        )
     return (
         f"Create {count} example dialogue pairs between user and bot.\n"
         f"{min_line}"
+        f"{priority_line}"
+        "Prioritize in-world dialogue and scene interaction over profile exposition.\n"
+        "Keep user lines short setup prompts; bot lines should carry most of the content.\n"
+        "Bot replies should be mostly spoken lines, with minimal narration.\n"
+        "For multi-character or open-world bots, bot replies may include multiple in-world speakers by name.\n"
+        "Do not write greeting/opening lines; each pair should feel like a mid-scene interaction sample.\n"
+        "Do not center the exchange on explaining {{user}}. Center on {{char}} voice, world, and interaction style.\n"
+        "Use {{user}} mainly as a prompt trigger, not the focus of the content.\n"
+        "Do not explain the character's traits directly unless naturally spoken in-scene.\n"
         "Do not use em dashes.\n"
         "If you reference names, use {{user}} and {{char}} instead of proper names.\n"
         "Return JSON only: {\"dialogues\": [{\"user\": \"...\", \"bot\": \"...\"}]}.\n\n"
         f"Known details:\n{context}\n\n"
+        f"User notes:\n{notes}\n\n"
+        "Output JSON only."
+    )
+def build_existing_refinement_prompt(
+    bot: Dict[str, Any],
+    personality: str,
+    first_messages: List[str],
+    scenarios: List[str],
+    dialogues: List[Dict[str, str]],
+    first_count: int,
+    scenario_count: int,
+    dialogue_count: int,
+    notes: str,
+    require_personality_patch: bool,
+    strict_character_focus: bool,
+) -> str:
+    notes = notes.strip() if notes else "None"
+    fields = bot.get("fields", {})
+    personality_block = personality.strip() if personality else str(fields.get("personality", "")).strip()
+    first_block = first_messages or bot.get("first_messages", [])
+    scenario_block = scenarios or bot.get("scenarios", [])
+    dialogue_block = dialogues or bot.get("example_dialogues", [])
+    dialogue_lines = []
+    for pair in dialogue_block[:12]:
+        user = str(pair.get("user", "")).strip()
+        bot_line = str(pair.get("bot", "")).strip()
+        if user:
+            dialogue_lines.append(f"{{{{user}}}}: {user}")
+        if bot_line:
+            dialogue_lines.append(f"{{{{char}}}}: {bot_line}")
+    canon_parts = []
+    for key in (
+        "name",
+        "description",
+        "personality",
+        "setting",
+        "current_scenario",
+        "backstory",
+        "world_lore",
+        "relationship",
+        "goals",
+        "motivations",
+        "values",
+        "rules",
+        "system_prompt",
+        "post_history_instructions",
+    ):
+        value = str(fields.get(key, "") or "").strip()
+        if value:
+            canon_parts.append(value)
+    canon_block = "\n\n".join(canon_parts).strip() or "None"
+    personality_line = (
+        "For personality: return a non-empty additive continuation in near-1:1 style with the existing personality text.\n"
+        "Keep wording, cadence, and structure consistent, then extend it with substantial detail.\n"
+        "Write roughly 220 to 520 words, preserving canon and adding nuance, behavior, and voice traits.\n\n"
+        if require_personality_patch
+        else "For personality: return an empty string.\n\n"
+    )
+    strict_focus_lines = ""
+    if strict_character_focus:
+        strict_focus_lines = (
+            "STRICT CHARACTER FOCUS MODE:\n"
+            "- Keep {{user}} minimal and functional.\n"
+            "- Keep output anchored on {{char}} personality, behavior, and world context.\n"
+            "- Reject user-centric framing.\n\n"
+        )
+    return (
+        "You are extending an existing RP bot. Do not create a new character from scratch.\n"
+        "Treat existing material as canon and add onto it only.\n"
+        "Support single-character, multi-character, and open-world bots.\n"
+        "Do not replace existing cast, setting, or premise unless explicitly asked in user notes.\n"
+        "Generate additions only, avoid duplicates, and keep placeholders {{user}} and {{char}}.\n"
+        "Do not output a template or rewrite everything into labeled sections.\n"
+        "For dialogues, prioritize in-world character-to-character speech.\n"
+        "Keep user turns brief; bot turns should carry most of the scene content.\n"
+        "Avoid profile exposition in dialogues. Show voice through actual conversation.\n"
+        "Dialogues are training examples, not first greetings. Do not produce opener-style lines in dialogues.\n"
+        "Focus far more on {{char}} behavior/voice than on describing {{user}}.\n"
+        "Do not use em dashes.\n"
+        f"Generate exactly {first_count} new first messages.\n"
+        f"Generate exactly {scenario_count} new scenarios (1 to 3 sentences each).\n"
+        f"Generate exactly {dialogue_count} new dialogue pairs.\n"
+        "If any requested count is 0, return an empty list for that key.\n"
+        "Return JSON only with keys:\n"
+        "personality, first_messages, scenarios, dialogues\n\n"
+        f"{personality_line}"
+        "For first_messages: these must be true greeting/opening messages.\n"
+        "For dialogues: these must be example interaction snippets, not greetings.\n\n"
+        f"{strict_focus_lines}"
+        f"Existing canon text:\n{canon_block}\n\n"
+        f"Current personality context:\n{personality_block or 'None'}\n\n"
+        f"Current first messages:\n{chr(10).join(first_block[:12]) if first_block else 'None'}\n\n"
+        f"Current scenarios:\n{chr(10).join(scenario_block[:12]) if scenario_block else 'None'}\n\n"
+        f"Current example dialogues:\n{chr(10).join(dialogue_lines) if dialogue_lines else 'None'}\n\n"
         f"User notes:\n{notes}\n\n"
         "Output JSON only."
     )
@@ -1023,21 +1387,34 @@ def build_simple_prompt(bot: Dict[str, Any], simple_input: str, dialogue_count: 
     context = build_simple_context(bot)
     context_block = f"Existing bot details:\n{context}\n\n" if context else ""
     token_lines = []
+    priority_lines = []
+    priority_lines = []
     min_description = get_min_tokens(bot, "min_tokens_description")
     if min_description:
         token_lines.append(f"- Description: at least ~{min_description} tokens.")
+        if has_priority_min_tokens(bot, "min_tokens_description"):
+            priority_lines.append(f"- Description: hard minimum ~{min_description} tokens.")
     min_first = get_min_tokens(bot, "min_tokens_first_messages")
     if min_first:
         token_lines.append(f"- First message: at least ~{min_first} tokens.")
+        if has_priority_min_tokens(bot, "min_tokens_first_messages"):
+            priority_lines.append(f"- First message: hard minimum ~{min_first} tokens.")
     min_scenario = get_min_tokens(bot, "min_tokens_scenario")
     if min_scenario:
         token_lines.append(f"- Scenario: at least ~{min_scenario} tokens.")
+        if has_priority_min_tokens(bot, "min_tokens_scenario"):
+            priority_lines.append(f"- Scenario: hard minimum ~{min_scenario} tokens.")
     min_dialogues = get_min_tokens(bot, "min_tokens_dialogues")
     if min_dialogues:
         token_lines.append(f"- Dialogues: at least ~{min_dialogues} tokens total.")
+        if has_priority_min_tokens(bot, "min_tokens_dialogues"):
+            priority_lines.append(f"- Dialogues: hard minimum ~{min_dialogues} tokens total.")
     token_block = ""
     if token_lines:
         token_block = "Minimum token targets (total per section):\n" + "\n".join(token_lines) + "\n\n"
+    priority_block = ""
+    if priority_lines:
+        priority_block = "Priority minimums (Extreme):\n" + "\n".join(priority_lines) + "\nTreat these as hard floors.\n\n"
     return (
         "You are creating a minimal RP bot starter kit.\n"
         "Use the user input and notes below plus any attached images.\n"
@@ -1047,11 +1424,14 @@ def build_simple_prompt(bot: Dict[str, Any], simple_input: str, dialogue_count: 
         "Scenario must be 1 to 2 sentences.\n"
         "If a minimum token target is set, aim for it while keeping the sentence limit.\n"
         f"{token_block}"
+        f"{priority_block}"
         "Do not use em dashes.\n"
         "If you reference names, use {{user}} and {{char}}.\n"
         "If existing messages, scenarios, or dialogues are provided, create new ones and avoid repeats.\n"
         "If existing first messages are provided, treat them as a 1:1 style blueprint.\n"
         "Match voice, cadence, punctuation, line breaks, POV, and structure while keeping content new.\n"
+        "For dialogues, prioritize in-world conversation. Keep user lines brief and make bot replies dialogue-heavy.\n"
+        "Avoid profile exposition in dialogue lines.\n"
         f"dialogues should include {dialogue_count} pairs of {{\"user\": \"...\", \"bot\": \"...\"}}.\n\n"
         f"{context_block}"
         f"User input:\n{simple_input}\n\n"
@@ -1062,27 +1442,54 @@ def build_compile_prompt(bot: Dict[str, Any], notes: str) -> str:
     context = build_context(bot)
     notes = notes.strip() if notes else "None"
     reference = get_reference_first_message(bot)
+    description_enabled = is_compile_section_enabled(bot, "min_tokens_description")
+    first_enabled = is_compile_section_enabled(bot, "min_tokens_first_messages")
+    scenario_enabled = is_compile_section_enabled(bot, "min_tokens_scenario")
+    dialogues_enabled = is_compile_section_enabled(bot, "min_tokens_dialogues")
     reference_block = ""
     if reference:
         reference_block = f"Reference first message (style only, do not copy):\n{reference}\n\n"
     token_lines = []
-    min_description = get_min_tokens(bot, "min_tokens_description")
+    min_description = get_min_tokens(bot, "min_tokens_description") if description_enabled else None
     if min_description:
         token_lines.append(f"- Description: at least ~{min_description} tokens.")
-    min_first = get_min_tokens(bot, "min_tokens_first_messages")
+        if has_priority_min_tokens(bot, "min_tokens_description"):
+            priority_lines.append(f"- Description: hard minimum ~{min_description} tokens.")
+    min_first = get_min_tokens(bot, "min_tokens_first_messages") if first_enabled else None
     if min_first:
         token_lines.append(f"- First messages: at least ~{min_first} tokens total across both messages.")
-    min_scenario = get_min_tokens(bot, "min_tokens_scenario")
+        if has_priority_min_tokens(bot, "min_tokens_first_messages"):
+            priority_lines.append(f"- First messages: hard minimum ~{min_first} tokens total.")
+    min_scenario = get_min_tokens(bot, "min_tokens_scenario") if scenario_enabled else None
     if min_scenario:
         token_lines.append(f"- Scenario: at least ~{min_scenario} tokens total.")
-    min_dialogues = get_min_tokens(bot, "min_tokens_dialogues")
+        if has_priority_min_tokens(bot, "min_tokens_scenario"):
+            priority_lines.append(f"- Scenario: hard minimum ~{min_scenario} tokens total.")
+    min_dialogues = get_min_tokens(bot, "min_tokens_dialogues") if dialogues_enabled else None
     if min_dialogues:
         token_lines.append(f"- Dialogues: at least ~{min_dialogues} tokens total across all pairs.")
+        if has_priority_min_tokens(bot, "min_tokens_dialogues"):
+            priority_lines.append(f"- Dialogues: hard minimum ~{min_dialogues} tokens total.")
+    disabled_lines = []
+    if not description_enabled:
+        disabled_lines.append("- Description is disabled: return description as an empty string.")
+    if not first_enabled:
+        disabled_lines.append("- First messages are disabled: return first_messages as an empty array.")
+    if not scenario_enabled:
+        disabled_lines.append("- Scenario is disabled: return scenario as an empty string.")
+    if not dialogues_enabled:
+        disabled_lines.append("- Dialogues are disabled: return dialogues as an empty array.")
+    disabled_block = ""
+    if disabled_lines:
+        disabled_block = "Disabled sections:\n" + "\n".join(disabled_lines) + "\n"
     token_block = ""
+    priority_block = ""
     total_line = "Aim for roughly 1200 to 2400 tokens total across all fields.\n"
     if token_lines:
         token_block = "Minimum token targets (total per section):\n" + "\n".join(token_lines) + "\n"
         total_line = "Meet the minimum targets while keeping the description dominant.\n"
+    if priority_lines:
+        priority_block = "PRIORITY MINIMUMS (Extreme):\n" + "\n".join(priority_lines) + "\nTreat these as hard floors.\n"
     description_line = (
         "- Description: 24 to 36 paragraphed labeled sections; aim for 80 to 90 percent of the tokens"
     )
@@ -1110,9 +1517,12 @@ def build_compile_prompt(bot: Dict[str, Any], notes: str) -> str:
         f"{description_line}"
         f"{first_line}"
         "- Scenario: 1 to 2 sentences, concise hook only, no extra worldbuilding.\n"
-        "- Dialogues: 4 pairs of {\"user\": \"...\", \"bot\": \"...\"}, each bot reply 1 to 2 sentences.\n"
+        "- Dialogues: 4 pairs of {\"user\": \"...\", \"bot\": \"...\"}, with short user prompts and dialogue-heavy bot replies.\n"
+        "- Dialogues should read like in-world scene conversation, not profile exposition.\n"
         "If a minimum token target conflicts with the sentence limit, keep the sentence limit.\n"
         f"{token_block}"
+        f"{priority_block}"
+        f"{disabled_block}"
         f"{total_line}"
         "If a reference first message is provided, treat it as a 1:1 style blueprint for the first messages.\n"
         "Match its voice, cadence, punctuation, line breaks, POV, and overall structure as closely as possible.\n"
@@ -1385,6 +1795,11 @@ def strip_endpoint_suffix(base_url: str) -> str:
         if base_url.endswith(suffix):
             return base_url[: -len(suffix)].rstrip("/")
     return base_url
+def is_cohere_compatible_url(base_url: str) -> bool:
+    parsed = urlparse((base_url or "").strip().lower())
+    host = parsed.netloc or ""
+    path = parsed.path or ""
+    return "cohere" in host or "/cohere" in path or "/compatibility" in path
 def normalize_base_url(provider: str, base_url: str) -> str:
     base_url = (base_url or "").strip()
     if not base_url:
@@ -1404,20 +1819,81 @@ def normalize_base_url(provider: str, base_url: str) -> str:
         if not has_url_path(base_url):
             return base_url.rstrip("/") + "/api/v1"
         return base_url
-    if provider in {"openai", "grok", "openai_compatible"}:
+    if provider in {"openai", "grok"}:
+        if not has_url_path(base_url):
+            return base_url.rstrip("/") + "/v1"
+        return base_url
+    if provider == "openai_compatible":
+        if is_cohere_compatible_url(base_url):
+            parsed = urlparse(base_url)
+            path = (parsed.path or "").strip("/")
+            if not path:
+                return base_url.rstrip("/") + "/compatibility/v1"
+            if "/compatibility/v1" in f"/{path}":
+                return base_url
+            if path == "compatibility" or path.endswith("/compatibility"):
+                return base_url.rstrip("/") + "/v1"
+            if path == "v1" or path.endswith("/v1"):
+                return base_url[: -len("/v1")].rstrip("/") + "/compatibility/v1"
+            return base_url
         if not has_url_path(base_url):
             return base_url.rstrip("/") + "/v1"
         return base_url
     return base_url
-def request_json(url: str, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
-    resp = requests.post(url, headers=headers, json=payload, timeout=90)
+def request_json(url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout_seconds: int = 90) -> Dict[str, Any]:
+    resp = requests.post(url, headers=headers, json=payload, timeout=max(10, min(600, int(timeout_seconds or 90))))
     if resp.status_code >= 400:
         try:
             detail = resp.json()
         except Exception:
             detail = resp.text
+        if resp.status_code == 405:
+            raise RuntimeError(f"405 Method Not Allowed at {url}. Check provider base URL path. Response: {detail}")
         raise RuntimeError(f"{resp.status_code} {detail}")
     return resp.json()
+def request_openai_like_stream_text(
+    url: str,
+    headers: Dict[str, str],
+    payload: Dict[str, Any],
+    timeout_seconds: int = 90,
+) -> str:
+    req_payload = dict(payload)
+    req_payload["stream"] = True
+    timeout = max(10, min(600, int(timeout_seconds or 90)))
+    with requests.post(url, headers=headers, json=req_payload, timeout=timeout, stream=True) as resp:
+        if resp.status_code >= 400:
+            try:
+                detail = resp.json()
+            except Exception:
+                detail = resp.text
+            raise RuntimeError(f"{resp.status_code} {detail}")
+        chunks: List[str] = []
+        for raw_line in resp.iter_lines(decode_unicode=True):
+            line = (raw_line or "").strip()
+            if not line or not line.startswith("data:"):
+                continue
+            data_part = line[len("data:"):].strip()
+            if not data_part or data_part == "[DONE]":
+                continue
+            event = parse_json_loose(data_part)
+            if not isinstance(event, dict):
+                continue
+            choices = event.get("choices", [])
+            if not choices:
+                continue
+            choice0 = choices[0] if isinstance(choices[0], dict) else {}
+            delta = choice0.get("delta", {}) if isinstance(choice0, dict) else {}
+            if isinstance(delta, dict):
+                text_part = delta.get("content")
+                if isinstance(text_part, str) and text_part:
+                    chunks.append(text_part)
+                    continue
+            message = choice0.get("message", {}) if isinstance(choice0, dict) else {}
+            if isinstance(message, dict):
+                text_part = message.get("content")
+                if isinstance(text_part, str) and text_part:
+                    chunks.append(text_part)
+        return "".join(chunks).strip()
 def call_openai_like(
     settings: Dict[str, Any],
     system_prompt: str,
@@ -1428,6 +1904,8 @@ def call_openai_like(
     provider = settings["provider"]
     base_url = normalize_base_url(provider, settings.get("base_url") or PROVIDER_DEFAULTS[provider]["base_url"])
     model = settings.get("model") or PROVIDER_DEFAULTS[provider]["model"]
+    timeout_seconds = int(settings.get("timeout_seconds", DEFAULT_SETTINGS["timeout_seconds"]) or DEFAULT_SETTINGS["timeout_seconds"])
+    use_streaming = bool(settings.get("experimental_text_streaming", False)) and not json_mode
     headers = {"Content-Type": "application/json"}
     api_key = settings.get("api_key", "")
     if api_key:
@@ -1455,12 +1933,19 @@ def call_openai_like(
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
     url = base_url.rstrip("/") + "/chat/completions"
+    if use_streaming:
+        try:
+            streamed_text = request_openai_like_stream_text(url, headers, payload, timeout_seconds=timeout_seconds)
+            if streamed_text:
+                return streamed_text
+        except RuntimeError:
+            pass
     try:
-        data = request_json(url, headers, payload)
+        data = request_json(url, headers, payload, timeout_seconds=timeout_seconds)
     except RuntimeError:
         if json_mode:
             payload.pop("response_format", None)
-            data = request_json(url, headers, payload)
+            data = request_json(url, headers, payload, timeout_seconds=timeout_seconds)
         else:
             raise
     choices = data.get("choices", [])
@@ -1495,7 +1980,7 @@ def call_anthropic(settings: Dict[str, Any], system_prompt: str, user_prompt: st
     if system_prompt:
         payload["system"] = system_prompt
     url = base_url.rstrip("/") + "/messages"
-    data = request_json(url, headers, payload)
+    data = request_json(url, headers, payload, timeout_seconds=timeout_seconds)
     parts = data.get("content", [])
     return "".join(part.get("text", "") for part in parts if part.get("type") == "text")
 def call_gemini(settings: Dict[str, Any], system_prompt: str, user_prompt: str, images: List[Dict[str, str]]) -> str:
@@ -1512,7 +1997,7 @@ def call_gemini(settings: Dict[str, Any], system_prompt: str, user_prompt: str, 
     if system_prompt:
         payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
     url = base_url.rstrip("/") + f"/models/{model}:generateContent"
-    data = request_json(url, headers, payload)
+    data = request_json(url, headers, payload, timeout_seconds=timeout_seconds)
     candidates = data.get("candidates", [])
     if not candidates:
         return ""
@@ -1742,6 +2227,12 @@ def api_settings():
         settings["autosave_seconds"] = int(settings.get("autosave_seconds", DEFAULT_SETTINGS["autosave_seconds"]))
     except Exception:
         settings["autosave_seconds"] = DEFAULT_SETTINGS["autosave_seconds"]
+    try:
+        settings["timeout_seconds"] = int(settings.get("timeout_seconds", DEFAULT_SETTINGS["timeout_seconds"]))
+    except Exception:
+        settings["timeout_seconds"] = DEFAULT_SETTINGS["timeout_seconds"]
+    settings["timeout_seconds"] = max(10, min(600, settings["timeout_seconds"]))
+    settings["experimental_text_streaming"] = bool(settings.get("experimental_text_streaming", False))
     provider = settings.get("provider", "openai")
     defaults = PROVIDER_DEFAULTS.get(provider, PROVIDER_DEFAULTS["openai"])
     previous_provider = existing.get("provider", "openai")
@@ -1772,6 +2263,74 @@ def api_bot(bot_id: str):
     upsert_bot(db, bot)
     save_db(db)
     return jsonify({"ok": True})
+@app.route("/api/bot/<bot_id>/cleanse_generated", methods=["POST"])
+def api_cleanse_generated(bot_id: str):
+    ensure_dirs()
+    db = load_db()
+    bot = get_bot(db, bot_id)
+    if not bot:
+        return jsonify({"error": "Bot not found"}), 404
+    ensure_bot_defaults(bot)
+    payload = request.get_json(silent=True) or {}
+    force_full = parse_bool(payload.get("force_full", True))
+    generated = bot.get("generated_content", {})
+    personality_chunks = normalize_str_list_any(generated.get("personality_chunks", []))
+    generated_first = set(normalize_str_list_any(generated.get("first_messages", [])))
+    generated_scenarios = set(normalize_str_list_any(generated.get("scenarios", [])))
+    generated_dialogue_fps = {_dialogue_fingerprint(item) for item in normalize_dialogues_any(generated.get("dialogues", []))}
+    has_tracking = bool(personality_chunks or generated_first or generated_scenarios or generated_dialogue_fps)
+    before_first = len(bot.get("first_messages", []))
+    before_scenarios = len(bot.get("scenarios", []))
+    before_dialogues = len(bot.get("example_dialogues", []))
+    before_personality = str(bot.get("fields", {}).get("personality", "") or "")
+    if force_full:
+        bot["fields"]["personality"] = ""
+        bot["first_messages"] = []
+        bot["scenarios"] = []
+        bot["example_dialogues"] = []
+    elif has_tracking:
+        bot["fields"]["personality"] = strip_generated_personality(before_personality, personality_chunks)
+        bot["first_messages"] = [item for item in normalize_str_list_any(bot.get("first_messages", [])) if item not in generated_first]
+        bot["scenarios"] = [item for item in normalize_str_list_any(bot.get("scenarios", [])) if item not in generated_scenarios]
+        bot["example_dialogues"] = [
+            item for item in normalize_dialogues_any(bot.get("example_dialogues", []))
+            if _dialogue_fingerprint(item) not in generated_dialogue_fps
+        ]
+    else:
+        # Fallback for older bots with no provenance data: force a full purge of target outputs.
+        bot["fields"]["personality"] = ""
+        bot["first_messages"] = []
+        bot["scenarios"] = []
+        bot["example_dialogues"] = []
+    primary = str(bot["fields"].get("primary_first_message", "") or "").strip()
+    if primary and primary in generated_first:
+        bot["fields"]["primary_first_message"] = bot["first_messages"][0] if bot["first_messages"] else ""
+    bot["generated_content"] = {
+        "personality_chunks": [],
+        "first_messages": [],
+        "scenarios": [],
+        "dialogues": [],
+    }
+    bot["updated_at"] = now_iso()
+    upsert_bot(db, bot)
+    save_db(db)
+    return jsonify({
+        "fields": {
+            "personality": bot["fields"].get("personality", ""),
+            "primary_first_message": bot["fields"].get("primary_first_message", ""),
+        },
+        "first_messages": bot.get("first_messages", []),
+        "scenarios": bot.get("scenarios", []),
+        "example_dialogues": bot.get("example_dialogues", []),
+        "removed": {
+            "personality_chars": max(0, len(before_personality) - len(bot["fields"].get("personality", ""))),
+            "first_messages": max(0, before_first - len(bot.get("first_messages", []))),
+            "scenarios": max(0, before_scenarios - len(bot.get("scenarios", []))),
+            "dialogues": max(0, before_dialogues - len(bot.get("example_dialogues", []))),
+            "force_full": force_full,
+            "fallback_full_purge": not has_tracking,
+        },
+    })
 @app.route("/api/bot/<bot_id>/upload", methods=["POST"])
 def api_upload(bot_id: str):
     ensure_dirs()
@@ -1860,6 +2419,8 @@ def api_generate_profile(bot_id: str):
             continue
         value = sanitize_text(str(data[key]), allow_emojis)
         bot["fields"][key] = apply_field_merge(bot["fields"].get(key, ""), value, merge_mode, key)
+        if key == "personality" and value:
+            track_generated_personality(bot, value)
     bot["updated_at"] = now_iso()
     upsert_bot(db, bot)
     save_db(db)
@@ -1891,6 +2452,8 @@ def api_generate_field(bot_id: str):
         return jsonify({"error": "Model did not return the requested field."}), 400
     value = sanitize_text(str(data[field]), allow_emojis)
     bot["fields"][field] = apply_field_merge(bot["fields"].get(field, ""), value, merge_mode, field)
+    if field == "personality" and value:
+        track_generated_personality(bot, value)
     bot["updated_at"] = now_iso()
     upsert_bot(db, bot)
     save_db(db)
@@ -1916,16 +2479,23 @@ def api_generate_first_messages(bot_id: str):
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
     data = extract_json(response)
-    messages = []
+    raw_messages: List[str] = []
     if isinstance(data, dict):
-        messages = normalize_str_list(data.get("first_messages", []))
+        raw_messages = normalize_str_list(data.get("first_messages", []))
     elif isinstance(data, list):
-        messages = normalize_str_list(data)
-    messages = sanitize_list(messages, allow_emojis)
+        raw_messages = normalize_str_list(data)
+    messages = sanitize_list(raw_messages, allow_emojis)
+    messages = filter_generated_strings(messages)
+    if not messages:
+        fallback_messages = sanitize_list(raw_messages, allow_emojis)
+        messages = [item for item in fallback_messages if item][: max(1, min(10, count))]
+    if not messages:
+        return jsonify({"error": "No first messages were generated."}), 400
     if merge_mode == "overwrite":
         bot["first_messages"] = messages
     else:
         bot["first_messages"] = bot.get("first_messages", []) + messages
+    track_generated_strings(bot, "first_messages", messages)
     bot["updated_at"] = now_iso()
     upsert_bot(db, bot)
     save_db(db)
@@ -1951,17 +2521,24 @@ def api_generate_scenarios(bot_id: str):
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
     data = extract_json(response)
-    scenarios = []
+    raw_scenarios: List[str] = []
     if isinstance(data, dict):
-        scenarios = normalize_str_list(data.get("scenarios", []))
+        raw_scenarios = normalize_str_list(data.get("scenarios", []))
     elif isinstance(data, list):
-        scenarios = normalize_str_list(data)
-    scenarios = sanitize_list(scenarios, allow_emojis)
-    scenarios = [clamp_sentences(item) for item in scenarios if item]
+        raw_scenarios = normalize_str_list(data)
+    cleaned_scenarios = sanitize_list(raw_scenarios, allow_emojis)
+    filtered_scenarios = filter_generated_strings(cleaned_scenarios)
+    filtered_scenarios = [clamp_sentences(item) for item in filtered_scenarios if item]
+    scenarios = filter_character_focused_scenarios(filtered_scenarios)
+    if not scenarios:
+        scenarios = [clamp_sentences(item) for item in cleaned_scenarios if item][: max(1, min(12, count))]
+    if not scenarios:
+        return jsonify({"error": "No scenarios were generated."}), 400
     if merge_mode == "overwrite":
         bot["scenarios"] = scenarios
     else:
         bot["scenarios"] = bot.get("scenarios", []) + scenarios
+    track_generated_strings(bot, "scenarios", scenarios)
     bot["updated_at"] = now_iso()
     upsert_bot(db, bot)
     save_db(db)
@@ -1987,20 +2564,218 @@ def api_generate_dialogues(bot_id: str):
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
     data = extract_json(response)
-    dialogues = []
+    raw_dialogues: List[Dict[str, str]] = []
     if isinstance(data, dict):
-        dialogues = normalize_dialogues(data.get("dialogues", []))
+        raw_dialogues = normalize_dialogues(data.get("dialogues", []))
     elif isinstance(data, list):
-        dialogues = normalize_dialogues(data)
-    dialogues = sanitize_dialogues(dialogues, allow_emojis)
+        raw_dialogues = normalize_dialogues(data)
+    cleaned_dialogues = sanitize_dialogues(raw_dialogues, allow_emojis)
+    dialogues = filter_character_focused_dialogues(cleaned_dialogues)
+    if not dialogues:
+        dialogues = cleaned_dialogues[: max(1, min(10, count))]
+    if not dialogues:
+        return jsonify({"error": "No example dialogues were generated."}), 400
     if merge_mode == "overwrite":
         bot["example_dialogues"] = dialogues
     else:
         bot["example_dialogues"] = bot.get("example_dialogues", []) + dialogues
+    track_generated_dialogues(bot, dialogues)
     bot["updated_at"] = now_iso()
     upsert_bot(db, bot)
     save_db(db)
     return jsonify({"example_dialogues": bot["example_dialogues"]})
+@app.route("/api/bot/<bot_id>/refine_existing", methods=["POST"])
+def api_refine_existing(bot_id: str):
+    ensure_dirs()
+    db = load_db()
+    bot = get_bot(db, bot_id)
+    if not bot:
+        return jsonify({"error": "Bot not found"}), 404
+    payload = request.get_json(silent=True) or {}
+    allow_emojis = parse_bool(payload.get("allow_emojis"))
+    notes = str(payload.get("refinement_notes", "")).strip() or payload.get("notes", "")
+    refinement = payload.get("refinement", {}) if isinstance(payload, dict) else {}
+    if not isinstance(refinement, dict):
+        refinement = {}
+    strict_character_focus = parse_bool(refinement.get("strict_character_focus"))
+    personality_mode = str(refinement.get("personality_mode", "append")).strip().lower()
+    if personality_mode not in {"append", "overwrite", "keep"}:
+        personality_mode = "append"
+    try:
+        first_count = int(refinement.get("first_messages_count", 2))
+    except Exception:
+        first_count = 2
+    try:
+        scenario_count = int(refinement.get("scenarios_count", 2))
+    except Exception:
+        scenario_count = 2
+    try:
+        dialogue_count = int(refinement.get("dialogues_count", 2))
+    except Exception:
+        dialogue_count = 2
+    first_count = max(0, min(10, first_count))
+    scenario_count = max(0, min(12, scenario_count))
+    dialogue_count = max(0, min(10, dialogue_count))
+    if not is_compile_section_enabled(bot, "min_tokens_first_messages"):
+        first_count = 0
+    if not is_compile_section_enabled(bot, "min_tokens_scenario"):
+        scenario_count = 0
+    if not is_compile_section_enabled(bot, "min_tokens_dialogues"):
+        dialogue_count = 0
+    refine_personality = str(refinement.get("personality", "")).strip()
+    refine_first = normalize_text_block_list(refinement.get("first_messages", ""))
+    refine_scenarios = normalize_text_block_list(refinement.get("scenarios", ""))
+    refine_dialogues = parse_dialogues_text(refinement.get("dialogues", ""))
+    fields = bot.get("fields", {})
+    has_canon_context = any(
+        str(fields.get(key, "") or "").strip()
+        for key in (
+            "name",
+            "description",
+            "personality",
+            "setting",
+            "current_scenario",
+            "backstory",
+            "world_lore",
+            "rules",
+        )
+    ) or bool(bot.get("first_messages") or bot.get("scenarios") or bot.get("example_dialogues"))
+    if not (
+        refine_personality
+        or refine_first
+        or refine_scenarios
+        or refine_dialogues
+        or has_canon_context
+    ):
+        return jsonify({"error": "Provide existing bot context first, then refine."}), 400
+    if first_count <= 0 and scenario_count <= 0 and dialogue_count <= 0 and personality_mode == "keep":
+        return jsonify({"error": "Set at least one refinement output to generate."}), 400
+    settings = load_settings()
+    images = load_image_data(bot) if settings.get("use_images", True) else []
+    prompt = build_existing_refinement_prompt(
+        bot,
+        refine_personality,
+        refine_first,
+        refine_scenarios,
+        refine_dialogues,
+        first_count,
+        scenario_count,
+        dialogue_count,
+        notes,
+        require_personality_patch=(personality_mode != "keep"),
+        strict_character_focus=strict_character_focus,
+    )
+    try:
+        response = call_llm(settings, "", prompt, images, json_mode=True)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+    data = extract_json(response)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Model did not return valid JSON."}), 400
+    data_flat = flatten_refinement_payload(data)
+    personality = sanitize_text(extract_personality_patch(data_flat), allow_emojis)
+    if personality in {"{}", "[]", "null", "None", "none"}:
+        personality = ""
+    raw_first_messages = data_flat.get(
+        "first_messages",
+        data_flat.get(
+            "greetings",
+            data_flat.get(
+                "openers",
+                data_flat.get(
+                    "opening_messages",
+                    data_flat.get("first_message", data_flat.get("greeting", [])),
+                ),
+            ),
+        ),
+    )
+    first_messages = sanitize_list(normalize_str_list_any(raw_first_messages), allow_emojis)
+    first_messages = filter_generated_strings(first_messages)
+    raw_scenarios = data_flat.get(
+        "scenarios",
+        data_flat.get(
+            "scenario_hooks",
+            data_flat.get("scenario_additions", data_flat.get("hooks", data_flat.get("scenario", []))),
+        ),
+    )
+    scenarios = sanitize_list(normalize_str_list_any(raw_scenarios), allow_emojis)
+    scenarios = filter_generated_strings(scenarios)
+    scenarios = [clamp_sentences(item) for item in scenarios if item]
+    scenarios = filter_character_focused_scenarios(scenarios, strict=strict_character_focus)
+    raw_dialogues = data_flat.get(
+        "dialogues",
+        data_flat.get(
+            "example_dialogues",
+            data_flat.get("dialogue_pairs", data_flat.get("samples", data_flat.get("examples", []))),
+        ),
+    )
+    dialogues = sanitize_dialogues(normalize_dialogues_any(raw_dialogues), allow_emojis)
+    dialogues = filter_character_focused_dialogues(dialogues, strict=strict_character_focus)
+    if first_count <= 0:
+        first_messages = []
+    if scenario_count <= 0:
+        scenarios = []
+    if dialogue_count <= 0:
+        dialogues = []
+    # Fallback: if first messages were requested but missing, run a dedicated generation pass.
+    if first_count > 0 and not first_messages:
+        fallback_prompt = build_first_messages_prompt(bot, first_count, notes)
+        try:
+            fallback_response = call_llm(settings, "", fallback_prompt, images, json_mode=True)
+            fallback_data = extract_json(fallback_response)
+            if isinstance(fallback_data, dict):
+                fallback_raw = fallback_data.get(
+                    "first_messages",
+                    fallback_data.get("greetings", fallback_data.get("openers", [])),
+                )
+                first_messages = sanitize_list(normalize_str_list_any(fallback_raw), allow_emojis)
+                first_messages = filter_generated_strings(first_messages)
+        except Exception:
+            pass
+    if scenario_count > 0 and not scenarios:
+        fallback_scenarios = sanitize_list(normalize_str_list_any(raw_scenarios), allow_emojis)
+        scenarios = [clamp_sentences(item) for item in fallback_scenarios if item][:scenario_count]
+    if dialogue_count > 0 and not dialogues:
+        fallback_dialogues = sanitize_dialogues(normalize_dialogues_any(raw_dialogues), allow_emojis)
+        dialogues = fallback_dialogues[:dialogue_count]
+    if personality and personality_mode != "keep":
+        if personality_mode == "overwrite":
+            bot["fields"]["personality"] = personality
+        else:
+            existing = str(bot["fields"].get("personality", "")).strip()
+            bot["fields"]["personality"] = f"{existing}\n\n{personality}".strip() if existing else personality
+        track_generated_personality(bot, personality)
+    if first_messages:
+        bot["first_messages"] = bot.get("first_messages", []) + first_messages
+        track_generated_strings(bot, "first_messages", first_messages)
+    if scenarios:
+        bot["scenarios"] = bot.get("scenarios", []) + scenarios
+        track_generated_strings(bot, "scenarios", scenarios)
+    if dialogues:
+        bot["example_dialogues"] = bot.get("example_dialogues", []) + dialogues
+        track_generated_dialogues(bot, dialogues)
+    refined_personality_output = str(bot["fields"].get("personality", "")).strip()
+    bot["updated_at"] = now_iso()
+    upsert_bot(db, bot)
+    save_db(db)
+    return jsonify(
+        {
+            "fields": {"personality": bot["fields"].get("personality", "")},
+            "first_messages": bot.get("first_messages", []),
+            "scenarios": bot.get("scenarios", []),
+            "example_dialogues": bot.get("example_dialogues", []),
+            "refined": {
+                "personality": refined_personality_output,
+                "first_messages": bot.get("first_messages", []),
+                "scenarios": bot.get("scenarios", []),
+                "dialogues": bot.get("example_dialogues", []),
+                "full_json_response": {
+                    "raw_model_response": str(response or ""),
+                    "parsed_json": data,
+                },
+            },
+        }
+    )
 @app.route("/api/bot/<bot_id>/generate_simple", methods=["POST"])
 def api_generate_simple(bot_id: str):
     ensure_dirs()
@@ -2043,6 +2818,8 @@ def api_generate_simple(bot_id: str):
         scenarios = normalize_str_list(data.get("scenarios", []))
         scenario = scenarios[0] if scenarios else ""
     scenario = clamp_sentences(sanitize_text(scenario, allow_emojis), 2)
+    if is_bad_generated_value(scenario):
+        scenario = ""
     first_message = ""
     if isinstance(data.get("first_message"), str):
         first_message = data.get("first_message", "").strip()
@@ -2050,25 +2827,32 @@ def api_generate_simple(bot_id: str):
         messages = normalize_str_list(data.get("first_messages", []))
         first_message = messages[0] if messages else ""
     first_message = sanitize_text(first_message, allow_emojis)
+    if is_bad_generated_value(first_message):
+        first_message = ""
     dialogues: List[Dict[str, str]] = []
     if isinstance(data.get("dialogues"), list):
         dialogues = normalize_dialogues(data.get("dialogues", []))
     elif isinstance(data.get("example_dialogues"), list):
         dialogues = normalize_dialogues(data.get("example_dialogues", []))
     dialogues = sanitize_dialogues(dialogues, allow_emojis)
+    dialogues = filter_character_focused_dialogues(dialogues)
     if description:
         bot["fields"]["description"] = description
     if personality:
         bot["fields"]["personality"] = personality
+        track_generated_personality(bot, personality)
     if scenario:
         bot["fields"]["current_scenario"] = scenario
         bot["scenarios"] = [scenario]
+        track_generated_strings(bot, "scenarios", [scenario])
     if first_message:
         bot["first_messages"] = [first_message]
+        track_generated_strings(bot, "first_messages", [first_message])
         if not str(bot["fields"].get("primary_first_message", "")).strip():
             bot["fields"]["primary_first_message"] = first_message
     if dialogues:
         bot["example_dialogues"] = dialogues
+        track_generated_dialogues(bot, dialogues)
     bot["updated_at"] = now_iso()
     upsert_bot(db, bot)
     save_db(db)
@@ -2094,6 +2878,19 @@ def api_compile(bot_id: str):
     allow_emojis = parse_bool(payload.get("allow_emojis"))
     notes = payload.get("notes", "")
     bot = apply_payload(bot, payload)
+    description_enabled = is_compile_section_enabled(bot, "min_tokens_description")
+    first_enabled = is_compile_section_enabled(bot, "min_tokens_first_messages")
+    scenario_enabled = is_compile_section_enabled(bot, "min_tokens_scenario")
+    dialogues_enabled = is_compile_section_enabled(bot, "min_tokens_dialogues")
+    if not (description_enabled or first_enabled or scenario_enabled or dialogues_enabled):
+        return jsonify({
+            "compiled": {
+                "description": "",
+                "scenario": "",
+                "first_messages": [],
+                "dialogues": [],
+            },
+        })
     settings = load_settings()
     images = load_image_data(bot) if settings.get("use_images", True) else []
     prompt = build_compile_prompt(bot, notes)
@@ -2112,18 +2909,30 @@ def api_compile(bot_id: str):
         scenarios = normalize_str_list(data.get("scenarios", []))
         scenario = scenarios[0] if scenarios else ""
     scenario = clamp_sentences(sanitize_text(scenario, allow_emojis), 2)
+    if is_bad_generated_value(scenario):
+        scenario = ""
     first_messages: List[str] = []
     if isinstance(data.get("first_messages"), list):
         first_messages = normalize_str_list(data.get("first_messages", []))
     elif isinstance(data.get("first_message"), str):
         first_messages = normalize_str_list([data.get("first_message", "")])
     first_messages = sanitize_list(first_messages, allow_emojis)[:2]
+    first_messages = filter_generated_strings(first_messages)
     dialogues: List[Dict[str, str]] = []
     if isinstance(data.get("dialogues"), list):
         dialogues = normalize_dialogues(data.get("dialogues", []))
     elif isinstance(data.get("example_dialogues"), list):
         dialogues = normalize_dialogues(data.get("example_dialogues", []))
     dialogues = sanitize_dialogues(dialogues, allow_emojis)[:4]
+    dialogues = filter_character_focused_dialogues(dialogues)
+    if not description_enabled:
+        description = ""
+    if not first_enabled:
+        first_messages = []
+    if not scenario_enabled:
+        scenario = ""
+    if not dialogues_enabled:
+        dialogues = []
     if not (description or scenario or first_messages or dialogues):
         return jsonify({
             "error": "Model returned empty output. Try increasing Max Tokens or switching models."
@@ -3052,10 +3861,17 @@ EDITOR_TEMPLATE = """
       padding: 4px 10px;
       font-size: 12px;
     }
-    :root.mode-simple .advanced-only {
+    :root.mode-simple .advanced-only,
+    :root.mode-simple .refinement-only {
       display: none !important;
     }
-    :root.mode-advanced .simple-only {
+    :root.mode-advanced .simple-only,
+    :root.mode-advanced .refinement-only {
+      display: none !important;
+    }
+    :root.mode-refinement .advanced-only,
+    :root.mode-refinement .simple-only,
+    :root.mode-refinement .refinement-hide {
       display: none !important;
     }
     .theme-control label {
@@ -3083,6 +3899,22 @@ EDITOR_TEMPLATE = """
       background: transparent;
       border: 1px solid var(--border);
       color: var(--ink);
+    }
+    .btn.danger {
+      background: rgba(220, 38, 38, 0.12);
+      border: 1px solid rgba(220, 38, 38, 0.5);
+      color: #ef4444;
+    }
+    .danger-box {
+      margin-top: 10px;
+      border: 1px solid rgba(220, 38, 38, 0.5);
+      background: rgba(220, 38, 38, 0.1);
+      border-radius: 12px;
+      padding: 10px;
+      color: #fecaca;
+    }
+    .danger-box.hidden {
+      display: none;
     }
     :root[data-theme="solar"] .chip input:checked + span,
     :root[data-theme="solar"] .mode-toggle button.active,
@@ -4169,6 +5001,7 @@ EDITOR_TEMPLATE = """
       <div class="mode-toggle" id="mode_toggle">
         <button type="button" data-mode="simple">Simple</button>
         <button type="button" data-mode="advanced">Advanced</button>
+        <button type="button" data-mode="refinement">Refinement</button>
       </div>
       <button class="btn ghost" type="button" onclick="toggleOnboarding(true)" title="Guide">Guide</button>
       <button class="btn ghost help-btn" type="button" onclick="toggleHelp(true)" title="Help">?</button>
@@ -4213,13 +5046,25 @@ EDITOR_TEMPLATE = """
           <div id="status" class="status">Ready.</div>
           <div id="save_status" class="status">Autosave ready.</div>
         </div>
+        <div class="row" style="margin-top: 10px;">
+          <button class="btn danger" type="button" onclick="openCleanseConfirm()">Cleanse Generated</button>
+        </div>
+        <div id="cleanse_confirm_box" class="danger-box hidden">
+          <div>This will fully purge tracked generated personality, first messages, scenarios, and dialogues.</div>
+          <div class="row" style="margin-top: 8px;">
+            <button class="btn danger" type="button" onclick="confirmCleanseGenerated()">Confirm Cleanse</button>
+            <button class="btn ghost" type="button" onclick="closeCleanseConfirm()">Cancel</button>
+          </div>
+        </div>
       </div>
       <div class="panel">
         <h3>Jump To</h3>
         <div class="nav-list">
-          <a href="#simple-generator">Simple Generator</a>
+          <a class="refinement-hide" href="#simple-generator">Simple Generator</a>
+          <a href="#existing-refinement">Existing Refinement</a>
+          <a class="refinement-only" href="#refined-output">Refined Outputs</a>
           <a class="advanced-only" href="#generation-controls">Generation Controls</a>
-          <a href="#core-identity">Core Identity</a>
+          <a class="refinement-hide" href="#core-identity">Core Identity</a>
           <a class="advanced-only" href="#appearance">Appearance</a>
           <a class="advanced-only" href="#voice-style">Voice and Style</a>
           <a class="advanced-only" href="#world-motivation">World and Motivation</a>
@@ -4229,9 +5074,9 @@ EDITOR_TEMPLATE = """
           <a class="advanced-only" href="#tone-toggles">Tone Toggles</a>
           <a class="advanced-only" href="#presets">Presets</a>
           <a class="advanced-only" href="#history">History</a>
-          <a href="#first-messages">First Messages</a>
-          <a href="#scenarios">Scenarios</a>
-          <a href="#example-dialogues">Example Dialogues</a>
+          <a class="refinement-hide" href="#first-messages">First Messages</a>
+          <a class="refinement-hide" href="#scenarios">Scenarios</a>
+          <a class="refinement-hide" href="#example-dialogues">Example Dialogues</a>
           <a class="advanced-only" href="#prompt-pairs">Prompt and Response</a>
           <a class="advanced-only" href="#memory-anchors">Memory Anchors</a>
           <a class="advanced-only" href="#lorebook">Lorebook</a>
@@ -4239,7 +5084,7 @@ EDITOR_TEMPLATE = """
           <a class="advanced-only" href="#import">Import</a>
           <a class="advanced-only" href="#exports">Exports</a>
           <a class="advanced-only" href="#ai-notes">AI Notes</a>
-          <a href="#test-chat">Test Chat</a>
+          <a class="refinement-hide" href="#test-chat">Test Chat</a>
           <a href="#compile">Compile</a>
           <a class="advanced-only" href="#utilities">Utilities</a>
         </div>
@@ -4290,6 +5135,18 @@ EDITOR_TEMPLATE = """
             <input type="number" id="ai_tokens" min="128" max="4096" step="64" value="{{ settings.max_tokens }}" />
           </div>
           <div>
+            <label>Timeout Seconds</label>
+            <input type="number" id="ai_timeout" min="10" max="600" step="5" value="{{ settings.timeout_seconds }}" />
+          </div>
+          <div>
+            <label>Text Streaming</label>
+            <select id="ai_streaming">
+              <option value="false" {% if not settings.experimental_text_streaming %}selected{% endif %}>Disabled</option>
+              <option value="true" {% if settings.experimental_text_streaming %}selected{% endif %}>Experimental</option>
+            </select>
+            <div class="hint">Experimental: streams text on compatible OpenAI-style providers.</div>
+          </div>
+          <div>
             <label>Autosave Seconds</label>
             <input type="number" id="autosave_seconds" min="10" max="300" step="5" value="{{ settings.autosave_seconds }}" />
           </div>
@@ -4306,7 +5163,7 @@ EDITOR_TEMPLATE = """
       </div>
     </aside>
     <main class="main">
-      <section class="panel" id="simple-generator">
+      <section class="panel refinement-hide" id="simple-generator">
         <div class="section-head">
           <h2>Simple Generator</h2>
           <div class="row">
@@ -4351,6 +5208,115 @@ EDITOR_TEMPLATE = """
             <div class="hint">Paste existing dialogue lines to steer new outputs.</div>
           </div>
         </div>
+      </section>
+      <section class="panel refinement-only" id="existing-refinement">
+        <div class="section-head">
+          <h2>Existing Refinement</h2>
+          <div class="row">
+            <button class="btn" type="button" onclick="refineExisting()">Refine and Add On</button>
+            <button class="btn danger" type="button" onclick="openCleanseConfirm()">Cleanse Generated</button>
+          </div>
+        </div>
+        <div class="hint">Paste current content (or edit pulled content), then generate additions that match the existing bot style.</div>
+        <div class="grid">
+          <div>
+            <label>Personality Context</label>
+            <textarea data-field="refine_personality" id="refine_personality" placeholder="Current personality traits, tone, and style.">{{ bot.fields.refine_personality }}</textarea>
+          </div>
+          <div>
+            <label>Personality Update</label>
+            <select id="refine_personality_mode">
+              <option value="append">Append</option>
+              <option value="overwrite">Overwrite</option>
+              <option value="keep">Keep Existing</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label>Existing First Messages</label>
+            <input type="hidden" data-field="refine_first_messages" id="refine_first_messages_store" value="{{ bot.fields.refine_first_messages }}" />
+            <div id="refine_first_messages_list" class="list-stack"></div>
+            <div class="list-tools">
+              <button class="btn ghost" type="button" onclick="removeSelected('refine_first_messages_list')">Remove Selected</button>
+            </div>
+            <button class="btn secondary" type="button" onclick="addRefineFirstMessage()">+ Add Message</button>
+          </div>
+          <div>
+            <label>Existing Scenarios</label>
+            <textarea data-field="refine_scenarios" id="refine_scenarios" placeholder="One per line.">{{ bot.fields.refine_scenarios }}</textarea>
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label>Existing Example Dialogues</label>
+            <textarea data-field="refine_dialogues" id="refine_dialogues" placeholder="{{ '{{user}}' }}: ...&#10;{{ '{{char}}' }}: ...">{{ bot.fields.refine_dialogues }}</textarea>
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label>First Messages to Add</label>
+            <input type="number" id="refine_first_count" min="0" max="10" value="2" />
+          </div>
+          <div>
+            <label>Scenarios to Add</label>
+            <input type="number" id="refine_scenario_count" min="0" max="12" value="2" />
+          </div>
+          <div>
+            <label>Dialogues to Add</label>
+            <input type="number" id="refine_dialogue_count" min="0" max="10" value="2" />
+          </div>
+        </div>
+        <div class="row">
+          <label class="chip">
+            <input type="checkbox" id="refine_strict_focus" checked />
+            <span>Strict Character Focus</span>
+          </label>
+        </div>
+        <div>
+          <label>Refinement Notes (Priority)</label>
+          <textarea data-field="refine_notes" id="refine_notes" placeholder="Optional. If filled, this is prioritized over AI Notes for refine instructions.">{{ bot.fields.refine_notes }}</textarea>
+          <div class="hint">Use this to specify exactly what to refine, where to refine, and what to add.</div>
+        </div>
+        <details class="panel" style="margin-top: 10px;">
+          <summary>Refinement Request Preview</summary>
+          <div class="hint">Shows exactly what will be sent to the refinement endpoint.</div>
+          <textarea id="refine_request_preview" readonly></textarea>
+        </details>
+      </section>
+      <section class="panel refinement-only" id="refined-output">
+        <div class="section-head">
+          <h2>Refined Outputs</h2>
+          <div class="row">
+            <button class="btn ghost" type="button" onclick="copyRefinedOutputs()">Copy Refined</button>
+            <button class="btn secondary" type="button" onclick="sendRefinedToCompile()">Send To Compile</button>
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label>Personality</label>
+            <textarea id="refined_personality_output" readonly></textarea>
+          </div>
+          <div>
+            <label>Dialogues</label>
+            <textarea id="refined_dialogues_output" readonly></textarea>
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label>First Messages</label>
+            <div id="refined_first_messages_list" class="list-stack"></div>
+          </div>
+          <div>
+            <label>Scenarios</label>
+            <div id="refined_scenarios_list" class="list-stack"></div>
+          </div>
+        </div>
+        <div>
+          <label>Full JSON Response</label>
+          <textarea id="refined_full_json_output" readonly></textarea>
+        </div>
+        <div class="hint">Shows the latest refinement outputs from Refine and Add On.</div>
       </section>
       <section class="panel advanced-only" id="generation-controls">
         <div class="section-head">
@@ -4411,7 +5377,7 @@ EDITOR_TEMPLATE = """
         <pre id="preview_output" class="preview"></pre>
         <div id="token_total" class="token-counter"></div>
       </section>
-      <section class="panel" id="core-identity">
+      <section class="panel refinement-hide" id="core-identity">
         <div class="section-head">
           <h2>Core Identity</h2>
           <div class="row advanced-only">
@@ -4733,6 +5699,7 @@ EDITOR_TEMPLATE = """
             <input type="hidden" data-field="min_tokens_description" id="min_tokens_description" value="{{ bot.fields.min_tokens_description or 'auto' }}" />
             <div class="mode-toggle token-toggle" data-token-target="min_tokens_description">
               <button type="button" data-value="auto">Auto</button>
+              <button type="button" data-value="off">Off</button>
               <button type="button" data-value="250">Low</button>
               <button type="button" data-value="500">Medium</button>
               <button type="button" data-value="750">High</button>
@@ -4745,6 +5712,7 @@ EDITOR_TEMPLATE = """
             <input type="hidden" data-field="min_tokens_first_messages" id="min_tokens_first_messages" value="{{ bot.fields.min_tokens_first_messages or 'auto' }}" />
             <div class="mode-toggle token-toggle" data-token-target="min_tokens_first_messages">
               <button type="button" data-value="auto">Auto</button>
+              <button type="button" data-value="off">Off</button>
               <button type="button" data-value="250">Low</button>
               <button type="button" data-value="500">Medium</button>
               <button type="button" data-value="750">High</button>
@@ -4757,6 +5725,7 @@ EDITOR_TEMPLATE = """
             <input type="hidden" data-field="min_tokens_scenario" id="min_tokens_scenario" value="{{ bot.fields.min_tokens_scenario or 'auto' }}" />
             <div class="mode-toggle token-toggle" data-token-target="min_tokens_scenario">
               <button type="button" data-value="auto">Auto</button>
+              <button type="button" data-value="off">Off</button>
               <button type="button" data-value="250">Low</button>
               <button type="button" data-value="500">Medium</button>
               <button type="button" data-value="750">High</button>
@@ -4769,6 +5738,7 @@ EDITOR_TEMPLATE = """
             <input type="hidden" data-field="min_tokens_dialogues" id="min_tokens_dialogues" value="{{ bot.fields.min_tokens_dialogues or 'auto' }}" />
             <div class="mode-toggle token-toggle" data-token-target="min_tokens_dialogues">
               <button type="button" data-value="auto">Auto</button>
+              <button type="button" data-value="off">Off</button>
               <button type="button" data-value="250">Low</button>
               <button type="button" data-value="500">Medium</button>
               <button type="button" data-value="750">High</button>
@@ -4801,7 +5771,7 @@ EDITOR_TEMPLATE = """
         <div class="grid">
           <div>
             <label>First Messages</label>
-            <textarea id="compile_first_messages_output" readonly></textarea>
+            <div id="compile_first_messages_list" class="list-stack"></div>
           </div>
           <div>
             <label>Example Dialogues</label>
@@ -4810,7 +5780,7 @@ EDITOR_TEMPLATE = """
         </div>
         <div class="hint">These outputs do not change the bot until you apply them.</div>
       </section>
-      <section class="panel" id="first-messages">
+      <section class="panel refinement-hide" id="first-messages">
         <h2>First Messages</h2>
         <div class="grid">
           <div>
@@ -4840,7 +5810,7 @@ EDITOR_TEMPLATE = """
         </div>
         <button class="btn secondary" type="button" onclick="addFirstMessage()">Add Message</button>
       </section>
-      <section class="panel" id="scenarios">
+      <section class="panel refinement-hide" id="scenarios">
         <h2>Scenarios</h2>
         <div class="row">
           <input type="number" id="scenario_count" min="1" max="12" value="5" />
@@ -4857,7 +5827,7 @@ EDITOR_TEMPLATE = """
         </div>
         <button class="btn secondary" type="button" onclick="addScenario()">Add Scenario</button>
       </section>
-      <section class="panel" id="example-dialogues">
+      <section class="panel refinement-hide" id="example-dialogues">
         <h2>Example Dialogues</h2>
         <div class="row">
           <input type="number" id="dialogue_count" min="1" max="10" value="4" />
@@ -5003,7 +5973,7 @@ EDITOR_TEMPLATE = """
           </div>
         </div>
       </section>
-      <section class="panel" id="test-chat">
+      <section class="panel refinement-hide" id="test-chat">
         <h2>Test Chat</h2>
         <div class="row" style="align-items: center; justify-content: space-between;">
           <div class="mode-toggle chat-mode-toggle" id="chat_mode_toggle">
@@ -5030,6 +6000,7 @@ EDITOR_TEMPLATE = """
           <form method="post" action="{{ url_for('delete_bot_route', bot_id=bot.id) }}" onsubmit="return confirm('Delete this bot?');">
             <button class="btn ghost" type="submit">Delete Bot</button>
           </form>
+          <button class="btn danger" type="button" onclick="openCleanseConfirm()">Cleanse Generated</button>
         </div>
       </section>
     </main>
@@ -5238,6 +6209,8 @@ EDITOR_TEMPLATE = """
   const previewOutput = document.getElementById('preview_output');
   const tokenTotalEl = document.getElementById('token_total');
   const firstMessagesEl = document.getElementById('first_messages');
+  const refineFirstMessagesListEl = document.getElementById('refine_first_messages_list');
+  const refineFirstMessagesStoreEl = document.getElementById('refine_first_messages_store');
   const primarySelectEl = document.getElementById('primary_greeting_select');
   const scenarioListEl = document.getElementById('scenario_list');
   const dialogueListEl = document.getElementById('dialogue_list');
@@ -5292,9 +6265,14 @@ EDITOR_TEMPLATE = """
   const simpleNameEl = document.getElementById('simple_name');
   const simpleAgeEl = document.getElementById('simple_age');
   const simpleSpeciesEl = document.getElementById('simple_species');
+  const refinedPersonalityOutputEl = document.getElementById('refined_personality_output');
+  const refinedDialoguesOutputEl = document.getElementById('refined_dialogues_output');
+  const refinedFirstMessagesListEl = document.getElementById('refined_first_messages_list');
+  const refinedScenariosListEl = document.getElementById('refined_scenarios_list');
+  const refinedFullJsonOutputEl = document.getElementById('refined_full_json_output');
   const compileDescriptionEl = document.getElementById('compile_description_output');
   const compileScenarioEl = document.getElementById('compile_scenario_output');
-  const compileFirstMessagesEl = document.getElementById('compile_first_messages_output');
+  const compileFirstMessagesListEl = document.getElementById('compile_first_messages_list');
   const compileDialoguesEl = document.getElementById('compile_dialogues_output');
   let lastProvider = document.getElementById('ai_provider').value;
   const QUALITY_HINT = 'High quality mode: write clean, vivid, and precise prose with careful detail, consistent tone, and no filler.';
@@ -5563,6 +6541,7 @@ EDITOR_TEMPLATE = """
   const state = {
     images: BOT.images || [],
     tags: BOT.tags || [],
+    refinedOutputs: null,
     compileOutputs: null,
     dirty: false,
     previewMode: 'card',
@@ -5630,6 +6609,7 @@ EDITOR_TEMPLATE = """
   function normalizeTokenValue(raw) {
     const text = String(raw || '').trim().toLowerCase();
     if (!text || text === 'auto' || text === 'default' || text === 'none') return 'auto';
+    if (text === 'off') return 'off';
     if (TOKEN_PRESET_VALUES[text]) return TOKEN_PRESET_VALUES[text];
     const normalized = text.replace('_', ' ');
     if (TOKEN_PRESET_VALUES[normalized]) return TOKEN_PRESET_VALUES[normalized];
@@ -5657,6 +6637,30 @@ EDITOR_TEMPLATE = """
         input.value = normalized;
       }
     });
+    syncRefineCountLocks();
+  }
+  function syncRefineCountLocks() {
+    const mapping = [
+      { tokenId: 'min_tokens_first_messages', inputId: 'refine_first_count' },
+      { tokenId: 'min_tokens_scenario', inputId: 'refine_scenario_count' },
+      { tokenId: 'min_tokens_dialogues', inputId: 'refine_dialogue_count' },
+    ];
+    mapping.forEach(({ tokenId, inputId }) => {
+      const tokenInput = document.getElementById(tokenId);
+      const countInput = document.getElementById(inputId);
+      if (!tokenInput || !countInput) return;
+      const isOff = normalizeTokenValue(tokenInput.value) === 'off';
+      if (isOff) {
+        countInput.value = '0';
+        countInput.disabled = true;
+      } else {
+        countInput.disabled = false;
+        const numeric = parseInt(countInput.value || '0', 10);
+        if (Number.isNaN(numeric) || numeric < 0) {
+          countInput.value = '0';
+        }
+      }
+    });
   }
   function initTokenTargets() {
     document.querySelectorAll('[data-token-target]').forEach((toggleEl) => {
@@ -5673,6 +6677,7 @@ EDITOR_TEMPLATE = """
       });
     });
     refreshTokenTargets();
+    syncRefineCountLocks();
   }
   function syncSimpleField(simpleEl, fieldKey) {
     if (!simpleEl) return;
@@ -5703,12 +6708,103 @@ EDITOR_TEMPLATE = """
     state.compileOutputs = compiled || null;
     if (compileDescriptionEl) compileDescriptionEl.value = compiled?.description || '';
     if (compileScenarioEl) compileScenarioEl.value = compiled?.scenario || '';
-    if (compileFirstMessagesEl) {
+    if (compileFirstMessagesListEl) {
+      compileFirstMessagesListEl.innerHTML = '';
       const list = Array.isArray(compiled?.first_messages) ? compiled.first_messages : [];
-      compileFirstMessagesEl.value = list.join('\\n\\n');
+      if (!list.length) {
+        const box = document.createElement('textarea');
+        box.readOnly = true;
+        box.value = '';
+        compileFirstMessagesListEl.appendChild(box);
+      } else {
+        list.forEach((msg) => {
+          const box = document.createElement('textarea');
+          box.readOnly = true;
+          box.value = msg || '';
+          compileFirstMessagesListEl.appendChild(box);
+        });
+      }
     }
     if (compileDialoguesEl) {
       compileDialoguesEl.value = formatDialoguesOutput(compiled?.dialogues || []);
+    }
+  }
+  function renderRefinedOutputs(refined) {
+    state.refinedOutputs = refined || null;
+    if (refinedPersonalityOutputEl) {
+      refinedPersonalityOutputEl.value = refined?.personality || '';
+    }
+    if (refinedDialoguesOutputEl) {
+      refinedDialoguesOutputEl.value = formatDialoguesOutput(refined?.dialogues || []);
+    }
+    if (refinedFirstMessagesListEl) {
+      refinedFirstMessagesListEl.innerHTML = '';
+      const list = Array.isArray(refined?.first_messages) ? refined.first_messages : [];
+      if (!list.length) {
+        const box = document.createElement('textarea');
+        box.readOnly = true;
+        box.value = '';
+        refinedFirstMessagesListEl.appendChild(box);
+      } else {
+        list.forEach((msg) => {
+          const box = document.createElement('textarea');
+          box.readOnly = true;
+          box.value = msg || '';
+          refinedFirstMessagesListEl.appendChild(box);
+        });
+      }
+    }
+    if (refinedScenariosListEl) {
+      refinedScenariosListEl.innerHTML = '';
+      const list = Array.isArray(refined?.scenarios) ? refined.scenarios : [];
+      if (!list.length) {
+        const box = document.createElement('textarea');
+        box.readOnly = true;
+        box.value = '';
+        refinedScenariosListEl.appendChild(box);
+      } else {
+        list.forEach((item) => {
+          const box = document.createElement('textarea');
+          box.readOnly = true;
+          box.value = item || '';
+          refinedScenariosListEl.appendChild(box);
+        });
+      }
+    }
+    if (refinedFullJsonOutputEl) {
+      try {
+        refinedFullJsonOutputEl.value = JSON.stringify(refined?.full_json_response || {}, null, 2);
+      } catch (err) {
+        refinedFullJsonOutputEl.value = '';
+      }
+    }
+  }
+  function sendRefinedToCompile() {
+    if (!state.refinedOutputs) {
+      setStatus('No refined outputs to send.', 'error');
+      return;
+    }
+    const refined = state.refinedOutputs;
+    renderCompileOutputs({
+      description: '',
+      first_messages: Array.isArray(refined.first_messages) ? refined.first_messages : [],
+      scenario: Array.isArray(refined.scenarios) ? refined.scenarios.join('\\n\\n') : '',
+      dialogues: Array.isArray(refined.dialogues) ? refined.dialogues : [],
+    });
+    setStatus('Refined outputs sent to Compile.', 'ok');
+    document.getElementById('compile-output')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function updateRefineRequestPreview(payload) {
+    const el = document.getElementById('refine_request_preview');
+    if (!el) return;
+    try {
+      const effectiveNotes = (payload?.refinement_notes || '').trim() || (payload?.notes || '').trim();
+      el.value = JSON.stringify({
+        notes_used: effectiveNotes,
+        refinement: payload?.refinement || {},
+      }, null, 2);
+    } catch (err) {
+      el.value = '';
     }
   }
   function copyText(text) {
@@ -5760,6 +6856,21 @@ EDITOR_TEMPLATE = """
       dialogues: compiled.dialogues || [],
     };
     copyText(JSON.stringify(payload, null, 2));
+  }
+  function copyRefinedOutputs() {
+    if (!state.refinedOutputs) {
+      setStatus('No refined outputs to copy.', 'error');
+      return;
+    }
+    const refined = state.refinedOutputs;
+    const text = [
+      `Personality:\\n${refined.personality || ''}`,
+      `First Messages:\\n${(refined.first_messages || []).join('\\n\\n')}`,
+      `Scenarios:\\n${(refined.scenarios || []).join('\\n\\n')}`,
+      `Dialogues:\\n${formatDialoguesOutput(refined.dialogues || [])}`,
+      `Full JSON Response:\\n${JSON.stringify(refined.full_json_response || {}, null, 2)}`,
+    ].join('\\n\\n');
+    copyText(text);
   }
   function applyCompileOutputs() {
     if (!state.compileOutputs) {
@@ -6337,10 +7448,11 @@ EDITOR_TEMPLATE = """
     });
   }
   function setMode(mode) {
-    const next = mode === 'advanced' ? 'advanced' : 'simple';
+    const next = mode === 'advanced' ? 'advanced' : (mode === 'refinement' ? 'refinement' : 'simple');
     const root = document.documentElement;
     root.classList.toggle('mode-simple', next === 'simple');
     root.classList.toggle('mode-advanced', next === 'advanced');
+    root.classList.toggle('mode-refinement', next === 'refinement');
     if (modeToggleEl) {
       modeToggleEl.querySelectorAll('button[data-mode]').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.mode === next);
@@ -6681,6 +7793,7 @@ EDITOR_TEMPLATE = """
   }
   function initDragLists() {
     enableDrag(firstMessagesEl);
+    enableDrag(refineFirstMessagesListEl);
     enableDrag(scenarioListEl);
     enableDrag(dialogueListEl);
     enableDrag(pairListEl);
@@ -6896,6 +8009,10 @@ EDITOR_TEMPLATE = """
       const row = checkbox.closest('.list-item, .dialogue-row, .pair-row, .lore-row');
       if (row) row.remove();
     });
+    if (containerId === 'refine_first_messages_list') {
+      ensureRefineFirstMessageRow();
+      syncRefineFirstMessagesStore();
+    }
     markDirty();
   }
   function convertMemoryToLorebook() {
@@ -7499,6 +8616,7 @@ EDITOR_TEMPLATE = """
     }).filter((entry) => entry.key || entry.content);
   }
   function collectFields() {
+    syncRefineFirstMessagesStore();
     const fields = {};
     document.querySelectorAll('[data-field]').forEach((el) => {
       const key = el.getAttribute('data-field');
@@ -7737,6 +8855,8 @@ EDITOR_TEMPLATE = """
       base_url: document.getElementById('ai_base_url').value,
       temperature: parseFloat(document.getElementById('ai_temp').value || '0.7'),
       max_tokens: parseInt(document.getElementById('ai_tokens').value || '1200', 10),
+      timeout_seconds: parseInt(document.getElementById('ai_timeout').value || '90', 10),
+      experimental_text_streaming: document.getElementById('ai_streaming').value === 'true',
       autosave_seconds: parseInt(document.getElementById('autosave_seconds').value || '30', 10),
     };
     const res = await fetch('/api/settings', {
@@ -7750,6 +8870,43 @@ EDITOR_TEMPLATE = """
     }
     setStatus('Settings saved.', 'ok');
     scheduleAutosave();
+  }
+  function openCleanseConfirm() {
+    const box = document.getElementById('cleanse_confirm_box');
+    if (!box) return;
+    box.classList.remove('hidden');
+  }
+  function closeCleanseConfirm() {
+    const box = document.getElementById('cleanse_confirm_box');
+    if (!box) return;
+    box.classList.add('hidden');
+  }
+  async function confirmCleanseGenerated() {
+    closeCleanseConfirm();
+    setStatus('Cleansing generated content...', null);
+    const res = await fetch(`/api/bot/${BOT.id}/cleanse_generated`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force_full: true }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setStatus(data.error || 'Cleanse failed', 'error');
+      return;
+    }
+    applyFields(data.fields || {});
+    firstMessagesEl.innerHTML = '';
+    (data.first_messages || []).forEach((msg) => addListItem(firstMessagesEl, msg));
+    scenarioListEl.innerHTML = '';
+    (data.scenarios || []).forEach((item) => addListItem(scenarioListEl, item));
+    dialogueListEl.innerHTML = '';
+    (data.example_dialogues || []).forEach((item) => addDialogueRow(dialogueListEl, item.user, item.bot));
+    const removed = data.removed || {};
+    setStatus(
+      `Cleanse complete. Removed ${removed.personality_chars || 0} personality chars, ${removed.first_messages || 0} first messages, ${removed.scenarios || 0} scenarios, ${removed.dialogues || 0} dialogues.`,
+      'ok'
+    );
+    markDirty();
   }
   function formatTime(date) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -7937,6 +9094,22 @@ EDITOR_TEMPLATE = """
     markDirty();
   }
   async function compileBot() {
+    if (document.documentElement.classList.contains('mode-refinement')) {
+      if (!state.refinedOutputs) {
+        setStatus('Run Refine and Add On first to populate outputs.', 'error');
+        return;
+      }
+      const refined = state.refinedOutputs;
+      renderCompileOutputs({
+        description: '',
+        first_messages: Array.isArray(refined.first_messages) ? refined.first_messages : [],
+        scenario: Array.isArray(refined.scenarios) ? refined.scenarios.join('\\n\\n') : '',
+        dialogues: Array.isArray(refined.dialogues) ? refined.dialogues : [],
+      });
+      setStatus('Loaded refined outputs into Compile.', 'ok');
+      document.getElementById('compile-output')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     setStatus('Compiling...', null);
     const payload = collectPayload();
     payload.notes = getGenerationNotes();
@@ -8149,6 +9322,59 @@ EDITOR_TEMPLATE = """
     setStatus('Dialogues generated.', 'ok');
     markDirty();
   }
+  async function refineExisting() {
+    setStatus('Refining existing content...', null);
+    const refinePersonalityEl = document.getElementById('refine_personality');
+    const refineNotesEl = document.getElementById('refine_notes');
+    const refineScenariosEl = document.getElementById('refine_scenarios');
+    const refineDialoguesEl = document.getElementById('refine_dialogues');
+    const refineFirstMessages = collectList(refineFirstMessagesListEl);
+    const refineNotes = (refineNotesEl?.value || '').trim();
+    const refinePersonality = (refinePersonalityEl?.value || '').trim();
+    const refineScenarios = (refineScenariosEl?.value || '').trim();
+    const refineDialogues = (refineDialoguesEl?.value || '').trim();
+    const refinement = {
+      first_messages_count: parseInt(document.getElementById('refine_first_count')?.value || '2', 10),
+      scenarios_count: parseInt(document.getElementById('refine_scenario_count')?.value || '2', 10),
+      dialogues_count: parseInt(document.getElementById('refine_dialogue_count')?.value || '2', 10),
+      personality_mode: document.getElementById('refine_personality_mode')?.value || 'append',
+      strict_character_focus: !!document.getElementById('refine_strict_focus')?.checked,
+    };
+    if (refinePersonality) refinement.personality = refinePersonality;
+    if (refineFirstMessages.length) refinement.first_messages = refineFirstMessages;
+    if (refineScenarios) refinement.scenarios = refineScenarios;
+    if (refineDialogues) refinement.dialogues = refineDialogues;
+    const payload = {
+      allow_emojis: allowEmojisEl ? allowEmojisEl.checked : false,
+      notes: getGenerationNotes(),
+      refinement_notes: refineNotes,
+      refinement,
+    };
+    updateRefineRequestPreview(payload);
+    const res = await fetch(`/api/bot/${BOT.id}/refine_existing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setStatus(data.error || 'Refinement failed', 'error');
+      return;
+    }
+    applyFields(data.fields || {});
+    firstMessagesEl.innerHTML = '';
+    (data.first_messages || []).forEach((msg) => addListItem(firstMessagesEl, msg));
+    scenarioListEl.innerHTML = '';
+    (data.scenarios || []).forEach((item) => addListItem(scenarioListEl, item));
+    dialogueListEl.innerHTML = '';
+    (data.example_dialogues || []).forEach((item) => addDialogueRow(dialogueListEl, item.user, item.bot));
+    const refined = data.refined || {};
+    renderRefinedOutputs(refined);
+    updatePrimarySelect();
+    document.getElementById('refined-output')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setStatus('Existing content refined and added.', 'ok');
+    markDirty();
+  }
   function applyFields(fields) {
     Object.keys(fields).forEach((key) => {
       const el = document.querySelector(`[data-field="${key}"]`);
@@ -8211,6 +9437,100 @@ EDITOR_TEMPLATE = """
       el.addEventListener('change', markDirty);
     });
   }
+  function syncRefineFirstMessagesStore() {
+    if (!refineFirstMessagesStoreEl || !refineFirstMessagesListEl) return;
+    const json = JSON.stringify(collectList(refineFirstMessagesListEl));
+    try {
+      const encoded = btoa(unescape(encodeURIComponent(json)));
+      refineFirstMessagesStoreEl.value = `jsonb64:${encoded}`;
+    } catch (err) {
+      refineFirstMessagesStoreEl.value = json;
+    }
+  }
+  function decodeRefineStoredJson(text) {
+    if (!text) return '';
+    if (!text.startsWith('jsonb64:')) return text;
+    try {
+      const raw = text.slice('jsonb64:'.length);
+      return decodeURIComponent(escape(atob(raw)));
+    } catch (err) {
+      return '';
+    }
+  }
+  function parseStoredRefineFirstMessages(raw) {
+    const text = String(raw || '').trim();
+    if (!text) return { hasStored: false, messages: [] };
+    const decoded = decodeRefineStoredJson(text) || text;
+    try {
+      const parsed = JSON.parse(decoded);
+      if (Array.isArray(parsed)) {
+        return {
+          hasStored: true,
+          messages: parsed.map((item) => String(item || '').trim()).filter(Boolean),
+        };
+      }
+    } catch (err) {
+      // Backward compatibility: try to recover JSON that may contain raw newlines.
+      try {
+        const repaired = decoded.replace(/\\r\\n/g, '\\n').replace(/\\n/g, '\\\\n');
+        const parsed = JSON.parse(repaired);
+        if (Array.isArray(parsed)) {
+          return {
+            hasStored: true,
+            messages: parsed.map((item) => String(item || '').trim()).filter(Boolean),
+          };
+        }
+      } catch (repairErr) {
+        // Fall through.
+      }
+    }
+    return {
+      hasStored: true,
+      messages: [decoded],
+    };
+  }
+  function maybeRecoverRefineMessagesFromBot(parsed) {
+    const botMessages = Array.isArray(BOT.first_messages) ? BOT.first_messages.map((item) => String(item || '').trim()).filter(Boolean) : [];
+    if (!parsed?.hasStored || !Array.isArray(parsed.messages)) return parsed;
+    if (parsed.messages.length !== 1 || botMessages.length <= 1) return parsed;
+    const storedSingle = String(parsed.messages[0] || '').trim();
+    const joinedBot = botMessages.join('\\n').trim();
+    if (storedSingle && storedSingle === joinedBot) {
+      return { hasStored: true, messages: botMessages };
+    }
+    return parsed;
+  }
+  function ensureRefineFirstMessageRow() {
+    if (!refineFirstMessagesListEl) return;
+    if (!refineFirstMessagesListEl.querySelector('.list-item')) {
+      addRefineFirstMessage('', false);
+    }
+  }
+  function addRefineFirstMessage(value = '', shouldMarkDirty = true) {
+    if (!refineFirstMessagesListEl) return;
+    addListItem(refineFirstMessagesListEl, value);
+    const row = refineFirstMessagesListEl.lastElementChild;
+    if (row instanceof HTMLElement) {
+      const textarea = row.querySelector('textarea');
+      if (textarea) {
+        textarea.addEventListener('input', syncRefineFirstMessagesStore);
+      }
+      row.addEventListener('dragend', syncRefineFirstMessagesStore);
+      const removeBtn = row.querySelector('button.btn.ghost');
+      if (removeBtn) {
+        removeBtn.onclick = () => {
+          row.remove();
+          ensureRefineFirstMessageRow();
+          syncRefineFirstMessagesStore();
+          markDirty();
+        };
+      }
+    }
+    syncRefineFirstMessagesStore();
+    if (shouldMarkDirty) {
+      markDirty();
+    }
+  }
   async function sendChat() {
     const input = document.getElementById('chat_input');
     const message = input.value.trim();
@@ -8253,6 +9573,24 @@ EDITOR_TEMPLATE = """
     (BOT.prompt_pairs || []).forEach((item) => addPairRow(pairListEl, item.user, item.bot));
     (BOT.memory || []).forEach((item) => addListItem(memoryListEl, item));
     (BOT.lorebook || []).forEach((item) => addLorebookEntry(lorebookListEl, item));
+    if (refineFirstMessagesListEl) {
+      const raw = (BOT.fields && BOT.fields.refine_first_messages) ? String(BOT.fields.refine_first_messages) : '';
+      const parsed = maybeRecoverRefineMessagesFromBot(parseStoredRefineFirstMessages(raw));
+      if (parsed.hasStored) {
+        if (parsed.messages.length) {
+          parsed.messages.forEach((line) => addRefineFirstMessage(line, false));
+        } else {
+          addRefineFirstMessage('', false);
+        }
+      } else if ((BOT.first_messages || []).length) {
+        (BOT.first_messages || []).forEach((line) => addRefineFirstMessage(line, false));
+      } else if (BOT.fields && BOT.fields.primary_first_message) {
+        addRefineFirstMessage(String(BOT.fields.primary_first_message || ''), false);
+      } else {
+        addRefineFirstMessage('', false);
+      }
+    }
+    syncRefineFirstMessagesStore();
     updatePrimarySelect();
   }
   hydrate();
@@ -8312,6 +9650,8 @@ EDITOR_TEMPLATE = """
 """
 def main() -> None:
     ensure_dirs()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8000")), debug=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8000")), debug=True, use_reloader=True)
 if __name__ == "__main__":
     main()
+    timeout_seconds = int(settings.get("timeout_seconds", DEFAULT_SETTINGS["timeout_seconds"]) or DEFAULT_SETTINGS["timeout_seconds"])
+    timeout_seconds = int(settings.get("timeout_seconds", DEFAULT_SETTINGS["timeout_seconds"]) or DEFAULT_SETTINGS["timeout_seconds"])
