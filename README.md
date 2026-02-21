@@ -11,7 +11,7 @@
 [![UI](https://img.shields.io/badge/UI-Single%20File%20App-10b981?logo=html5&logoColor=white)](#project-layout)
 [![Vision](https://img.shields.io/badge/Vision-Image--Aware%20Generation-14b8a6?logo=opencollective&logoColor=white)](#image-workflow)
 [![Exports](https://img.shields.io/badge/Exports-Card%20v2%20%7C%20Janitor%20%7C%20Risu%20%7C%20PNG-6366f1?logo=files&logoColor=white)](#exports)
-[![License](https://img.shields.io/badge/License-MIT-22c55e?logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 Botsmyth is a local-first RP bot builder with a fast Simple flow and full Advanced control. Create polished character packs (Description, First Messages, Scenario, Example Dialogues), test vision, and export to popular card formats.
 
